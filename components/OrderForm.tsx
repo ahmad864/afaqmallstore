@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { supabase } from "@/lib/supabase"
 import { uploadReceipt } from "@/lib/utils"
 
 export default function OrderForm() {
@@ -25,23 +26,21 @@ export default function OrderForm() {
         receiptUrl = await uploadReceipt(form.receipt, Date.now().toString())
       }
 
-      // إرسال البيانات إلى API Route
-      const response = await fetch("/api/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      // إرسال البيانات إلى API route
+      const res = await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: form.name,
           phone: form.phone,
           city: form.city,
           note: form.note,
-          receipt_url: receiptUrl
+          receiptUrl
         })
       })
 
-      if (!response.ok) {
-        const errData = await response.json()
-        throw new Error(errData.message || "Something went wrong")
-      }
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || 'Failed to submit order')
 
       alert("Order submitted successfully!")
       setForm({ name: "", phone: "", city: "", note: "", receipt: null })
