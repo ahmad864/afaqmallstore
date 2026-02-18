@@ -17,12 +17,11 @@ export default function AdminLoginPage() {
   const { loginAdmin } = useAuth()
   const router = useRouter()
 
-  // ⚡ تعديل handleSubmit لتصبح async
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     try {
-      const success = await loginAdmin(form.email, form.password) // استخدام await
+      const success = await loginAdmin(form.email, form.password)
       if (success) {
         router.push("/admin")
       } else {
@@ -89,17 +88,6 @@ export default function AdminLoginPage() {
                 Login as Admin
               </Button>
             </form>
-
-            {/* Hint */}
-            <div className="mt-4 p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
-              <p className="font-medium mb-1">Demo Admin Accounts:</p>
-              <p>clothing@afaqmall.com / raghad111</p>
-              <p>shoes@afaqmall.com / raghad222</p>
-              <p>electronics@afaqmall.com / raghad333</p>
-              <p>makeup@afaqmall.com / raghad444</p>
-              <p>furniture@afaqmall.com / raghad555</p>
-              <p>food@afaqmall.com / raghad666</p>
-            </div>
           </CardContent>
         </Card>
 
