@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { supabase } from "@/lib/supabase"
 import { uploadReceipt } from "@/lib/utils"
 
 export default function OrderForm() {
@@ -21,43 +20,28 @@ export default function OrderForm() {
     setError("")
 
     try {
-      // رفع الايصال
       let receiptUrl = ""
       if (form.receipt) {
         receiptUrl = await uploadReceipt(form.receipt, Date.now().toString())
       }
 
-      // حفظ الأوردر في Supabase
-      const { data, error: supabaseError } = await supabase
-        .from("orders")
-        .insert([{
+      // إرسال البيانات إلى API Route
+      const response = await fetch("/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           name: form.name,
           phone: form.phone,
           city: form.city,
           note: form.note,
           receipt_url: receiptUrl
-        }])
-
-      if (supabaseError) throw supabaseError
-
-      // إرسال رسالة للتليجرام
-      const telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN
-      const telegramChatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID
-
-      const message = `
-📦 *New Order Received*
-*Name:* ${form.name}
-*Phone:* ${form.phone}
-*City:* ${form.city}
-*Note:* ${form.note || "-"}
-*Receipt:* ${receiptUrl ? `[View](${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${receiptUrl})` : "-"}
-      `
-
-      await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: telegramChatId, text: message, parse_mode: "Markdown" })
+        })
       })
+
+      if (!response.ok) {
+        const errData = await response.json()
+        throw new Error(errData.message || "Something went wrong")
+      }
 
       alert("Order submitted successfully!")
       setForm({ name: "", phone: "", city: "", note: "", receipt: null })
