@@ -17,14 +17,20 @@ export default function AdminLoginPage() {
   const { loginAdmin } = useAuth()
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // ⚡ تعديل handleSubmit لتصبح async
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    const success = loginAdmin(form.email, form.password)
-    if (success) {
-      router.push("/admin")
-    } else {
-      setError("Invalid admin credentials")
+    try {
+      const success = await loginAdmin(form.email, form.password) // استخدام await
+      if (success) {
+        router.push("/admin")
+      } else {
+        setError("Invalid admin credentials")
+      }
+    } catch (err) {
+      console.error(err)
+      setError("Something went wrong. Please try again.")
     }
   }
 
@@ -87,12 +93,12 @@ export default function AdminLoginPage() {
             {/* Hint */}
             <div className="mt-4 p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
               <p className="font-medium mb-1">Demo Admin Accounts:</p>
-              <p>clothing@afaqmall.com / admin123</p>
-              <p>shoes@afaqmall.com / admin123</p>
-              <p>electronics@afaqmall.com / admin123</p>
-              <p>makeup@afaqmall.com / admin123</p>
-              <p>furniture@afaqmall.com / admin123</p>
-              <p>food@afaqmall.com / admin123</p>
+              <p>clothing@afaqmall.com / raghad111</p>
+              <p>shoes@afaqmall.com / raghad222</p>
+              <p>electronics@afaqmall.com / raghad333</p>
+              <p>makeup@afaqmall.com / raghad444</p>
+              <p>furniture@afaqmall.com / raghad555</p>
+              <p>food@afaqmall.com / raghad666</p>
             </div>
           </CardContent>
         </Card>
