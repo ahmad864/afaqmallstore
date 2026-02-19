@@ -14,6 +14,9 @@ import { useCart } from "@/lib/cart-store"
 import ProductRating from "@/components/ProductRating"
 import RecommendedProducts from "@/components/RecommendedProducts"
 
+// ✅ منتجات الموقع نفسها
+import { products } from "@/lib/products"
+
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -45,21 +48,12 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 
   const validate = () => form.name && form.phone && form.city && form.address
 
-  // فئة المنتج المشتراة لاستخدامها في المنتجات المقترحة
+  // ✅ استخراج الفئة تلقائياً
   const purchasedCategory =
     cartState.items.length > 0 ? cartState.items[0].category : ""
 
-  // تمرير جميع منتجات الموقع (مثال: يمكن جلبها من store أو db)
-  const allProducts = [
-    ...cartState.items,
-    { id: 101, name: "Demo Product 1", price: 50, image: "https://via.placeholder.com/150?text=Demo1", category: "Shoes" },
-    { id: 102, name: "Demo Product 2", price: 40, image: "https://via.placeholder.com/150?text=Demo2", category: "Shoes" },
-    { id: 103, name: "Demo Product 3", price: 20, image: "https://via.placeholder.com/150?text=Demo3", category: "Clothes" },
-    { id: 104, name: "Demo Product 4", price: 30, image: "https://via.placeholder.com/150?text=Demo4", category: "Clothes" },
-    { id: 105, name: "Demo Product 5", price: 60, image: "https://via.placeholder.com/150?text=Demo5", category: "Makeup" },
-    { id: 106, name: "Demo Product 6", price: 80, image: "https://via.placeholder.com/150?text=Demo6", category: "Makeup" },
-    // أضف أي منتجات تجريبية لكل قسم موجود في موقعك
-  ]
+  // ✅ منتجات الموقع
+  const allProducts = products
 
   const handleSend = async () => {
     if (payment === "shamcash" && !proof) {
@@ -136,8 +130,11 @@ ${productsText}
 
             <ProductRating />
 
-            {/* هنا نمرر الفئة المشتراة وكل المنتجات */}
-            <RecommendedProducts purchasedCategory={purchasedCategory} allProducts={allProducts} />
+            {/* ✅ المنتجات المقترحة */}
+            <RecommendedProducts
+              purchasedCategory={purchasedCategory}
+              allProducts={allProducts}
+            />
 
             <Button onClick={closeAll} className="w-full">
               Back to Store
@@ -175,20 +172,6 @@ ${productsText}
               value={form.address}
               onChange={e => setForm({ ...form, address: e.target.value })}
             />
-            <div className="bg-muted/50 p-3 rounded">
-              <div className="font-semibold text-sm mb-2">Order Summary</div>
-              {cartState.items.map(item => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span>{item.name} x{item.quantity}</span>
-                  <span>${item.price * item.quantity}</span>
-                </div>
-              ))}
-              <hr className="my-2" />
-              <div className="flex justify-between font-bold">
-                <span>Total</span>
-                <span>${total}</span>
-              </div>
-            </div>
             <Button
               onClick={() => validate() && setStep("payment")}
               className="w-full"
@@ -213,6 +196,7 @@ ${productsText}
                 <Label htmlFor="shamcash">ShamCash</Label>
               </div>
             </RadioGroup>
+
             {payment === "shamcash" && (
               <label className="flex flex-col gap-2 border p-2 rounded cursor-pointer">
                 <div className="flex items-center gap-2">
@@ -227,6 +211,7 @@ ${productsText}
                 />
               </label>
             )}
+
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setStep("info")} className="flex-1">
                 Back
