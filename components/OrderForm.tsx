@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { supabase } from "@/lib/supabase"
 import { uploadReceipt } from "@/lib/utils"
 
 export default function OrderForm() {
@@ -10,51 +9,43 @@ export default function OrderForm() {
     phone: "",
     city: "",
     note: "",
-    receipt: null as File | null
+    receipt: null as File | null,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
+    setSuccess("")
 
     try {
-      // رفع الايصال إلى Supabase Storage
       let receiptUrl = ""
       if (form.receipt) {
         receiptUrl = await uploadReceipt(form.receipt, Date.now().toString())
       }
 
-      // 1️⃣ حفظ الأوردر في Supabase
-      const { error: supabaseError } = await supabase
-        .from("orders")
-        .insert([{
-          name: form.name,
-          phone: form.phone,
-          city: form.city,
-          note: form.note,
-          receipt_url: receiptUrl
-        }])
-      if (supabaseError) throw supabaseError
-
-      // 2️⃣ إرسال رسالة مستقلة للتليجرام عبر API route
-      const telegramRes = await fetch('/api/send-telegram', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          phone: form.phone,
-          city: form.city,
-          note: form.note,
-          receiptUrl
-        })
+      // إرسال البيانات إلى Supabase (مستقل)
+      const resSupabase = await fetch("/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, receiptUrl }),
       })
-      const telegramData = await telegramRes.json()
-      if (!telegramData.success) throw new Error(telegramData.error || "Failed to send Telegram message")
+      const dataSupabase = await resSupabase.json()
+      if (!dataSupabase.success) throw new Error(dataSupabase.error || "Failed to save order in Supabase")
 
-      alert("Order submitted successfully!")
+      // إرسال البيانات إلى Telegram (مستقل)
+      const resTelegram = await fetch("/api/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, receiptUrl }),
+      })
+      const dataTelegram = await resTelegram.json()
+      if (!dataTelegram.success) throw new Error(dataTelegram.error || "Failed to send Telegram notification")
+
+      setSuccess("Order submitted successfully!")
       setForm({ name: "", phone: "", city: "", note: "", receipt: null })
 
     } catch (err: any) {
@@ -68,12 +59,12 @@ export default function OrderForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && <p className="text-red-500">{error}</p>}
+      {success && <p className="text-green-500">{success}</p>}
 
       <input type="text" placeholder="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
       <input type="text" placeholder="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required />
       <input type="text" placeholder="City" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} required />
       <textarea placeholder="Note (optional)" value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} />
-
       <input type="file" accept="image/*" onChange={e => setForm({ ...form, receipt: e.target.files?.[0] || null })} required />
 
       <button type="submit" disabled={loading}>{loading ? "Submitting..." : "Submit Order"}</button>
