@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useCart } from "@/lib/cart-store"
 import { useProducts } from "@/lib/products-store"
-import { getProductsByCategory } from "@/lib/data"
+import { getProductsByCategory, type CategorySlug } from "@/lib/data"
 import { ProductCard } from "@/components/product-card"
 import { ShoppingBag, Upload, ChevronLeft, ChevronRight } from "lucide-react"
 
@@ -30,10 +30,14 @@ type Step = "info" | "payment" | "success"
 export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
   const { state: cartState, dispatch: cartDispatch } = useCart()
   const productsContext = useProducts()
-  const { dispatch: productsDispatch, state: productsState } = productsContext
-
+  const { dispatch: productsDispatch } = productsContext
   const [step, setStep] = useState<Step>("info")
-  const [customerInfo, setCustomerInfo] = useState({ fullName: "", phone: "", governorate: "", address: "" })
+  const [customerInfo, setCustomerInfo] = useState({
+    fullName: "",
+    phone: "",
+    governorate: "",
+    address: "",
+  })
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "shamcash">("paypal")
   const [proofImage, setProofImage] = useState<File | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -60,38 +64,43 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
   const handlePaymentComplete = async () => {
     setIsSubmitting(true)
     try {
-      // معالجة الطلبات داخلياً
+      // Process orders - decrease stock, increase totalSold
       cartState.items.forEach((item) => {
         productsDispatch({ type: "PROCESS_ORDER", payload: { id: item.id, quantity: item.quantity } })
       })
 
-      // رسالة Telegram
+      // Build Telegram message
       const productLines = cartState.items
         .map((i) => `- ${i.name} x${i.quantity} = $${i.price * i.quantity}`)
         .join("\n")
 
-      const msg = `📦 New Order from AfaqMall!\n\nCustomer: ${customerInfo.fullName}\nPhone: ${customerInfo.phone}\nGovernorate: ${customerInfo.governorate}\nAddress: ${customerInfo.address}\n\nProducts:\n${productLines}\n\nTotal: $${totalPrice}\nPayment: ${paymentMethod === "paypal" ? "PayPal" : "Sham Cash"}${proofImage ? "\nPayment proof uploaded" : ""}`
+      const msg = `New Order from AfaqMall!\n\nCustomer: ${customerInfo.fullName}\nPhone: ${customerInfo.phone}\nGovernorate: ${customerInfo.governorate}\nAddress: ${customerInfo.address}\n\nProducts:\n${productLines}\n\nTotal: $${totalPrice}\nPayment: ${paymentMethod === "paypal" ? "PayPal" : "Sham Cash"}${proofImage ? "\nPayment proof uploaded" : ""}`
 
-      // إرسال Telegram
-      const TELEGRAM_BOT_TOKEN = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN
-      const TELEGRAM_CHAT_ID = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID
-      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg }),
-      })
+      // Send to Telegram (replace with your bot token and chat ID)
+      try {
+        const TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN"
+        const TELEGRAM_CHAT_ID = "YOUR_CHAT_ID"
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg }),
+        }).catch(() => {})
+      } catch {
+        // Telegram sending is optional
+      }
 
-      // حفظ الفئات والمنتجات للـ SuggestedProducts
-      const cats = cartState.items
-        .map((item) => productsState.products.find((p) => p.id === item.id)?.category || "")
-        .filter(Boolean)
+      // Save purchased categories and item IDs for suggestions
+      const { state: productsState } = productsContext
+      const cats = cartState.items.map((item) => {
+        const prod = productsState.products.find((p) => p.id === item.id)
+        return prod?.category || ""
+      }).filter(Boolean)
       setPurchasedCategories([...new Set(cats)])
       setPurchasedItemIds(cartState.items.map((i) => i.id))
 
       setStep("success")
       cartDispatch({ type: "CLEAR_CART" })
-    } catch (err) {
-      console.error(err)
+    } catch {
       alert("An error occurred. Please try again.")
     } finally {
       setIsSubmitting(false)
@@ -120,9 +129,13 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
               Thank you for your purchase. We will contact you soon to confirm your order.
             </p>
 
+            {/* Star Rating */}
             <RatingSection />
+
+            {/* Suggested Products Carousel */}
             <SuggestedProducts categories={purchasedCategories} excludeIds={purchasedItemIds} />
 
+            {/* Back to store */}
             <Button onClick={handleClose} className="bg-primary text-primary-foreground hover:bg-primary/90">
               Back to Store
             </Button>
@@ -144,6 +157,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
 
         {step === "info" && (
           <div className="space-y-4">
+            {/* Full Name */}
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name *</Label>
               <Input
@@ -156,6 +170,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
               {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
             </div>
 
+            {/* Phone */}
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number *</Label>
               <Input
@@ -169,6 +184,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
               {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
             </div>
 
+            {/* Governorate */}
             <div className="space-y-2">
               <Label htmlFor="governorate">Syrian Governorate *</Label>
               <Select
@@ -187,6 +203,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
               {errors.governorate && <p className="text-sm text-destructive">{errors.governorate}</p>}
             </div>
 
+            {/* Address */}
             <div className="space-y-2">
               <Label htmlFor="address">Full Address *</Label>
               <Textarea
@@ -200,6 +217,7 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
               {errors.address && <p className="text-sm text-destructive">{errors.address}</p>}
             </div>
 
+            {/* Order summary */}
             <div className="bg-muted/50 p-4 rounded-lg space-y-2">
               <h4 className="font-semibold text-sm">Order Summary</h4>
               {cartState.items.map((item) => (
@@ -226,7 +244,11 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
 
         {step === "payment" && (
           <div className="space-y-4">
-            <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "paypal" | "shamcash")} className="space-y-3">
+            <RadioGroup
+              value={paymentMethod}
+              onValueChange={(v) => setPaymentMethod(v as "paypal" | "shamcash")}
+              className="space-y-3"
+            >
               <div className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 cursor-pointer">
                 <RadioGroupItem value="paypal" id="paypal" />
                 <Label htmlFor="paypal" className="cursor-pointer flex-1">
@@ -236,7 +258,6 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
                   </p>
                 </Label>
               </div>
-
               <div className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 cursor-pointer">
                 <RadioGroupItem value="shamcash" id="shamcash" />
                 <Label htmlFor="shamcash" className="cursor-pointer flex-1">
@@ -290,4 +311,100 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
   )
 }
 
-// باقي الدوال مثل RatingSection, Separator, SuggestedProducts كما هي
+// ===== Helper Components =====
+function RatingSection() {
+  const [rating, setRating] = useState(0)
+  const [comment, setComment] = useState("")
+  const [submitted, setSubmitted] = useState(false)
+
+  if (submitted) return <p className="text-sm text-green-600 font-medium">Thank you for your feedback!</p>
+
+  return (
+    <div className="space-y-3 text-left">
+      <p className="text-sm font-medium text-foreground">Rate your experience:</p>
+      <div className="flex gap-1 justify-center">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            onClick={() => setRating(star)}
+            className={`text-2xl transition-colors ${star <= rating ? "text-yellow-400" : "text-muted-foreground/30"}`}
+          >
+            {'*'}
+          </button>
+        ))}
+      </div>
+      <Textarea
+        placeholder="Leave a comment (optional)..."
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        rows={2}
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => setSubmitted(true)}
+        disabled={rating === 0}
+      >
+        Submit Rating
+      </Button>
+    </div>
+  )
+}
+
+function Separator() {
+  return <hr className="border-t border-muted my-2" />
+}
+
+function SuggestedProducts({ categories, excludeIds }: { categories: string[]; excludeIds: number[] }) {
+  const [scrollPos, setScrollPos] = useState(0)
+
+  const suggestedProducts = categories
+    .flatMap((cat) => getProductsByCategory(cat))
+    .filter((p) => !excludeIds.includes(p.id))
+    .slice(0, 12)
+
+  if (suggestedProducts.length === 0) return null
+
+  const scrollLeft = () => {
+    const container = document.getElementById("suggested-carousel")
+    if (container) {
+      container.scrollBy({ left: -220, behavior: "smooth" })
+      setScrollPos(container.scrollLeft - 220)
+    }
+  }
+
+  const scrollRight = () => {
+    const container = document.getElementById("suggested-carousel")
+    if (container) {
+      container.scrollBy({ left: 220, behavior: "smooth" })
+      setScrollPos(container.scrollLeft + 220)
+    }
+  }
+
+  return (
+    <div className="text-left space-y-3 pt-2">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-foreground">You might also like</p>
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="icon" className="h-7 w-7" onClick={scrollLeft}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-7 w-7" onClick={scrollRight}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <div
+        id="suggested-carousel"
+        className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {suggestedProducts.map((product) => (
+          <div key={product.id} className="min-w-[180px] max-w-[180px]">
+            <ProductCard product={product} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
