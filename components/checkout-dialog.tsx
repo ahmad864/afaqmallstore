@@ -128,8 +128,10 @@ ${productsText}
               </p>
             </div>
 
+            {/* تقييم المنتج */}
             <ProductRating />
 
+            {/* المنتجات المقترحة 6 منتجات من نفس القسم */}
             <RecommendedProducts
               purchasedCategory={purchasedCategory}
               allProducts={allProducts}
