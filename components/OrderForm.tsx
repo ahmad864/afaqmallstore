@@ -36,8 +36,8 @@ export default function OrderForm() {
       const dataSupabase = await resSupabase.json()
       if (!dataSupabase.success) throw new Error(dataSupabase.error || "Failed to save order in Supabase")
 
-      // إرسال البيانات إلى Telegram (مستقل)
-      const resTelegram = await fetch("/api/telegram", {
+      // إرسال البيانات إلى Telegram (مستقل) عبر send-telegram
+      const resTelegram = await fetch("/api/send-telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, receiptUrl }),
