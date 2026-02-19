@@ -14,44 +14,83 @@ interface Product {
 
 interface Props {
   purchasedCategory?: string
-  allProducts: Product[] // كل منتجات الموقع يجب تمريرها من الـ checkout أو من الـ store
+  allProducts: Product[]
+  cartItems?: Product[] // ✅ لإخفاء المنتج المشتَرى (اختياري لكن أفضل)
 }
 
-export default function RecommendedProducts({ purchasedCategory, allProducts }: Props) {
+export default function RecommendedProducts({
+  purchasedCategory,
+  allProducts,
+  cartItems = [],
+}: Props) {
   const [products, setProducts] = useState<Product[]>([])
 
   useEffect(() => {
-    if (!purchasedCategory || !allProducts || !allProducts.length) {
+    if (!purchasedCategory || !allProducts?.length) {
       setProducts([])
       return
     }
 
-    // تصفية المنتجات حسب الفئة المشتراة
-    let filtered = allProducts.filter(p => p.category === purchasedCategory)
+    // ✅ منتجات من نفس الفئة
+    let filtered = allProducts.filter(
+      p => p.category === purchasedCategory
+    )
 
-    // إذا كان عدد المنتجات أقل من 6 نكررها حتى نملأ الست منتجات
-    while (filtered.length < 6 && filtered.length > 0) {
-      filtered = filtered.concat(filtered)
+    // ✅ استبعاد المنتجات الموجودة في السلة (المنتج المشتَرى)
+    if (cartItems.length) {
+      filtered = filtered.filter(
+        p => !cartItems.some(item => item.id === p.id)
+      )
     }
 
-    setProducts(filtered.slice(0, 6))
-  }, [purchasedCategory, allProducts])
+    // ✅ خلط المنتجات (لمنع عرض نفس الترتيب دائماً)
+    filtered = filtered.sort(() => Math.random() - 0.5)
+
+    // ✅ ضمان وجود 6 عناصر
+    if (filtered.length >= 6) {
+      setProducts(filtered.slice(0, 6))
+    } else if (filtered.length > 0) {
+      const repeated = [...filtered]
+
+      while (repeated.length < 6) {
+        repeated.push(filtered[repeated.length % filtered.length])
+      }
+
+      setProducts(repeated)
+    } else {
+      setProducts([])
+    }
+  }, [purchasedCategory, allProducts, cartItems])
 
   if (!products.length) return null
 
   return (
     <div className="mt-4">
       <h4 className="font-bold mb-2 text-sm">Recommended for you</h4>
+
       <div className="grid grid-cols-2 gap-3">
         {products.map(p => (
           <Card key={p.id} className="border">
             <CardHeader className="p-2">
-              <CardTitle className="text-xs font-semibold">{p.name}</CardTitle>
+              <CardTitle className="text-xs font-semibold">
+                {p.name}
+              </CardTitle>
             </CardHeader>
+
             <CardContent className="p-2">
-              <img src={p.image} alt={p.name} className="w-full h-24 object-cover mb-2 rounded" />
-              <div className="font-bold text-sm">${p.price}</div>
-              <Button size="sm" className="mt-2 w-full">View</Button>
+              <img
+                src={p.image}
+                alt={p.name}
+                className="w-full h-24 object-cover mb-2 rounded"
+              />
+
+              <div className="font-bold text-sm">
+                ${p.price}
+              </div>
+
+              <Button size="sm" className="mt-2 w-full">
+                View
+              </Button>
             </CardContent>
           </Card>
         ))}
