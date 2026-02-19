@@ -9,49 +9,41 @@ interface Product {
   name: string
   price: number
   image: string
+  category: string
 }
 
 interface Props {
-  category?: string // الفئة المشتراة
+  purchasedCategory?: string
 }
 
-export default function RecommendedProducts({ category }: Props) {
+export default function RecommendedProducts({ purchasedCategory }: Props) {
   const [products, setProducts] = useState<Product[]>([])
 
   useEffect(() => {
-    // منتجات تجريبية لكل فئة
-    const allProducts: Record<string, Product[]> = {
-      Shoes: [
-        { id: 1, name: "Sport Shoes", price: 50, image: "https://via.placeholder.com/150?text=Shoes1" },
-        { id: 2, name: "Casual Shoes", price: 60, image: "https://via.placeholder.com/150?text=Shoes2" },
-        { id: 3, name: "Sneakers", price: 70, image: "https://via.placeholder.com/150?text=Shoes3" },
-        { id: 4, name: "Formal Shoes", price: 80, image: "https://via.placeholder.com/150?text=Shoes4" },
-        { id: 5, name: "Boots", price: 90, image: "https://via.placeholder.com/150?text=Shoes5" },
-        { id: 6, name: "Sandals", price: 40, image: "https://via.placeholder.com/150?text=Shoes6" },
-      ],
-      Clothes: [
-        { id: 7, name: "T-Shirt", price: 20, image: "https://via.placeholder.com/150?text=Clothes1" },
-        { id: 8, name: "Jeans", price: 40, image: "https://via.placeholder.com/150?text=Clothes2" },
-        { id: 9, name: "Jacket", price: 80, image: "https://via.placeholder.com/150?text=Clothes3" },
-        { id: 10, name: "Dress", price: 60, image: "https://via.placeholder.com/150?text=Clothes4" },
-        { id: 11, name: "Sweater", price: 35, image: "https://via.placeholder.com/150?text=Clothes5" },
-        { id: 12, name: "Shorts", price: 25, image: "https://via.placeholder.com/150?text=Clothes6" },
-      ],
-      Accessories: [
-        { id: 13, name: "Watch", price: 120, image: "https://via.placeholder.com/150?text=Accessory1" },
-        { id: 14, name: "Ring", price: 80, image: "https://via.placeholder.com/150?text=Accessory2" },
-        { id: 15, name: "Necklace", price: 90, image: "https://via.placeholder.com/150?text=Accessory3" },
-        { id: 16, name: "Bracelet", price: 60, image: "https://via.placeholder.com/150?text=Accessory4" },
-        { id: 17, name: "Sunglasses", price: 50, image: "https://via.placeholder.com/150?text=Accessory5" },
-        { id: 18, name: "Hat", price: 30, image: "https://via.placeholder.com/150?text=Accessory6" },
-      ],
-    }
+    // مثال: جميع المنتجات التجريبية لجميع الأقسام
+    const allProducts: Product[] = [
+      { id: 1, name: "Sport Shoes", price: 50, image: "https://via.placeholder.com/150?text=Shoes1", category: "Shoes" },
+      { id: 2, name: "Casual Shoes", price: 60, image: "https://via.placeholder.com/150?text=Shoes2", category: "Shoes" },
+      { id: 3, name: "T-Shirt", price: 20, image: "https://via.placeholder.com/150?text=Clothes1", category: "Clothes" },
+      { id: 4, name: "Jeans", price: 40, image: "https://via.placeholder.com/150?text=Clothes2", category: "Clothes" },
+      { id: 5, name: "Watch", price: 120, image: "https://via.placeholder.com/150?text=Accessory1", category: "Accessories" },
+      { id: 6, name: "Ring", price: 80, image: "https://via.placeholder.com/150?text=Accessory2", category: "Accessories" },
+      { id: 7, name: "Backpack", price: 50, image: "https://via.placeholder.com/150?text=Bag1", category: "Bags" },
+      { id: 8, name: "Handbag", price: 70, image: "https://via.placeholder.com/150?text=Bag2", category: "Bags" },
+      { id: 9, name: "Baseball Cap", price: 20, image: "https://via.placeholder.com/150?text=Hat1", category: "Hats" },
+      { id: 10, name: "Beanie", price: 15, image: "https://via.placeholder.com/150?text=Hat2", category: "Hats" },
+      { id: 11, name: "Leather Jacket", price: 100, image: "https://via.placeholder.com/150?text=Jacket1", category: "Jackets" },
+      { id: 12, name: "Denim Jacket", price: 80, image: "https://via.placeholder.com/150?text=Jacket2", category: "Jackets" },
+      // أضف المزيد من المنتجات لكل قسم...
+    ]
 
-    // نختار المنتجات حسب الفئة المشتراة
-    const selectedProducts = category && allProducts[category] ? allProducts[category] : []
+    // اختيار المنتجات حسب الفئة المشتراة
+    const selectedProducts = purchasedCategory
+      ? allProducts.filter(p => p.category === purchasedCategory).slice(0, 6)
+      : []
 
-    setProducts(selectedProducts.slice(0, 6))
-  }, [category])
+    setProducts(selectedProducts)
+  }, [purchasedCategory])
 
   if (!products.length) return null
 
