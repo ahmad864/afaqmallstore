@@ -45,9 +45,8 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 
   const validate = () => form.name && form.phone && form.city && form.address
 
-  // فئة المنتج المشتراة لاستخدامها في المنتجات المقترحة
-  const purchasedCategory =
-    cartState.items.length > 0 ? (cartState.items[0] as any).category : ""
+  // ✅ أخذ الفئة تلقائيًا من المنتج المشتراة
+  const purchasedCategory = cartState.items[0]?.category || ""
 
   const handleSend = async () => {
     if (payment === "shamcash" && !proof) {
@@ -125,8 +124,8 @@ ${productsText}
 
             <ProductRating />
 
-            {/* تمرير الفئة تلقائيًا للمنتجات المقترحة */}
-            <RecommendedProducts category={purchasedCategory} />
+            {/* ✅ عرض 6 منتجات مقترحة من نفس القسم الذي اشترى منه الزبون */}
+            <RecommendedProducts purchasedCategory={purchasedCategory} />
 
             <Button onClick={closeAll} className="w-full">
               Back to Store
