@@ -58,7 +58,7 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
   const validate = () =>
     form.name && form.phone && form.city && form.address
 
-  // نحدد القسم الذي اشترى منه العميل لاستخدامه في المنتجات المقترحة
+  // فئة المنتج المشتراة لاستخدامها في المنتجات المقترحة
   const purchasedCategory =
     cartState.items.length > 0 ? (cartState.items[0] as any).category : ""
 
@@ -122,7 +122,6 @@ ${products}
         {/* SUCCESS */}
         {step === "success" && (
           <div className="space-y-6 py-6">
-
             <div className="text-center">
               <p className="text-green-600 font-semibold">
                 Order sent successfully ✅
@@ -132,7 +131,7 @@ ${products}
             {/* تقييم المنتج */}
             <ProductRating />
 
-            {/* المنتجات المقترحة */}
+            {/* المنتجات المقترحة حسب فئة المشتريات */}
             <RecommendedProducts category={purchasedCategory} />
 
             <Button onClick={closeAll} className="w-full">
