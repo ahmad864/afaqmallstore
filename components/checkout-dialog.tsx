@@ -1,3 +1,4 @@
+// components/checkout-dialog.tsx
 "use client"
 
 import { useState } from "react"
@@ -14,7 +15,7 @@ import { useCart } from "@/lib/cart-store"
 import ProductRating from "@/components/ProductRating"
 import RecommendedProducts from "@/components/RecommendedProducts"
 
-// ✅ هنا تستبدل getAllSiteProducts بالدالة أو الطريقة التي تجلب كل منتجات الموقع من الأقسام
+// ✅ استبدل هذه الدالة بالمنتجات التجريبية لديك
 import { getAllSiteProducts } from "@/lib/site-products"
 
 interface Props {
@@ -29,56 +30,34 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
   const [step, setStep] = useState<Step>("info")
   const [loading, setLoading] = useState(false)
 
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    city: "",
-    address: "",
-  })
-
+  const [form, setForm] = useState({ name: "", phone: "", city: "", address: "" })
   const [payment, setPayment] = useState<"paypal" | "shamcash">("paypal")
   const [proof, setProof] = useState<File | null>(null)
 
   const total = cartState.items.reduce((s, i) => s + i.price * i.quantity, 0)
-
-  const syrianGovernorates = [
-    "Damascus","Rif Dimashq","Aleppo","Homs","Hama","Latakia","Tartus",
-    "Idlib","Deir ez-Zor","Al-Hasakah","Ar-Raqqah","Daraa","As-Suwayda","Quneitra",
-  ]
+  const syrianGovernorates = ["Damascus","Rif Dimashq","Aleppo","Homs","Hama","Latakia","Tartus",
+    "Idlib","Deir ez-Zor","Al-Hasakah","Ar-Raqqah","Daraa","As-Suwayda","Quneitra"]
 
   const validate = () => form.name && form.phone && form.city && form.address
 
-  // استخراج الفئة تلقائياً من أول منتج في السلة
-  const purchasedCategory =
-    cartState.items.length > 0 ? cartState.items[0].category : ""
-
-  // كل منتجات الموقع من الأقسام
+  // استخراج الفئة من أول منتج في السلة
+  const purchasedCategory = cartState.items.length > 0 ? cartState.items[0].category : ""
   const allProducts = getAllSiteProducts()
 
   const handleSend = async () => {
-    if (payment === "shamcash" && !proof) {
-      alert("يجب رفع صورة إشعار الدفع لإتمام الطلب")
-      return
-    }
-
+    if (payment === "shamcash" && !proof) { alert("يجب رفع صورة إشعار الدفع لإتمام الطلب"); return }
     setLoading(true)
 
-    const productsText = cartState.items
-      .map(i => `• ${i.name} x${i.quantity} = $${i.price * i.quantity}`)
-      .join("\n")
-
+    const productsText = cartState.items.map(i => `• ${i.name} x${i.quantity} = $${i.price * i.quantity}`).join("\n")
     const message = `
 🛒 New Order
-
 👤 Name: ${form.name}
 📞 Phone: ${form.phone}
 🏙 City: ${form.city}
 📍 Address: ${form.address}
 💳 Payment: ${payment}
-
 📦 Products:
 ${productsText}
-
 💰 Total: $${total}
 `
 
@@ -86,11 +65,7 @@ ${productsText}
       const formData = new FormData()
       formData.append("message", message)
       if (proof) formData.append("proof", proof)
-
-      await fetch("/api/send-telegram", {
-        method: "POST",
-        body: formData,
-      })
+      await fetch("/api/send-telegram", { method: "POST", body: formData })
 
       dispatch({ type: "CLEAR_CART" })
       setStep("success")
@@ -123,77 +98,43 @@ ${productsText}
         {step === "success" && (
           <div className="space-y-6 py-6">
             <div className="text-center">
-              <p className="text-green-600 font-semibold">
-                Order sent successfully ✅
-              </p>
+              <p className="text-green-600 font-semibold">Order sent successfully ✅</p>
             </div>
 
             {/* تقييم المنتج */}
             <ProductRating />
 
-            {/* المنتجات المقترحة 6 منتجات من نفس القسم */}
-            <RecommendedProducts
-              purchasedCategory={purchasedCategory}
-              allProducts={allProducts}
-            />
+            {/* عرض 6 منتجات من نفس القسم */}
+            <RecommendedProducts purchasedCategory={purchasedCategory} allProducts={allProducts} />
 
-            <Button onClick={closeAll} className="w-full">
-              Back to Store
-            </Button>
+            <Button onClick={closeAll} className="w-full">Back to Store</Button>
           </div>
         )}
 
         {step === "info" && (
           <div className="space-y-4">
-            <Input
-              placeholder="Full Name"
-              value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
-            />
-            <Input
-              placeholder="Phone"
-              value={form.phone}
-              onChange={e => setForm({ ...form, phone: e.target.value })}
-            />
-            <Select
-              value={form.city}
-              onValueChange={v => setForm({ ...form, city: v })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select City" />
-              </SelectTrigger>
+            <Input placeholder="Full Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}/>
+            <Input placeholder="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}/>
+            <Select value={form.city} onValueChange={v => setForm({ ...form, city: v })}>
+              <SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
               <SelectContent>
-                {syrianGovernorates.map((g) => (
-                  <SelectItem key={g} value={g}>{g}</SelectItem>
-                ))}
+                {syrianGovernorates.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Textarea
-              placeholder="Full Address"
-              value={form.address}
-              onChange={e => setForm({ ...form, address: e.target.value })}
-            />
-            <Button
-              onClick={() => validate() && setStep("payment")}
-              className="w-full"
-            >
-              Continue to Payment
-            </Button>
+            <Textarea placeholder="Full Address" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })}/>
+            <Button onClick={() => validate() && setStep("payment")} className="w-full">Continue to Payment</Button>
           </div>
         )}
 
         {step === "payment" && (
           <div className="space-y-4">
-            <RadioGroup
-              value={payment}
-              onValueChange={v => setPayment(v as any)}
-            >
+            <RadioGroup value={payment} onValueChange={v => setPayment(v as any)}>
               <div className="flex items-center gap-2">
-                <RadioGroupItem value="paypal" id="paypal" />
+                <RadioGroupItem value="paypal" id="paypal"/>
                 <Label htmlFor="paypal">PayPal</Label>
               </div>
               <div className="flex items-center gap-2">
-                <RadioGroupItem value="shamcash" id="shamcash" />
+                <RadioGroupItem value="shamcash" id="shamcash"/>
                 <Label htmlFor="shamcash">ShamCash</Label>
               </div>
             </RadioGroup>
@@ -201,25 +142,16 @@ ${productsText}
             {payment === "shamcash" && (
               <label className="flex flex-col gap-2 border p-2 rounded cursor-pointer">
                 <div className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
+                  <Upload className="h-4 w-4"/>
                   <span>{proof ? proof.name : "Upload Payment Proof *"}</span>
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={e => setProof(e.target.files?.[0] || null)}
-                />
+                <input type="file" accept="image/*" className="hidden" onChange={e => setProof(e.target.files?.[0] || null)}/>
               </label>
             )}
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep("info")} className="flex-1">
-                Back
-              </Button>
-              <Button onClick={handleSend} disabled={loading} className="flex-1">
-                {loading ? "Sending..." : "Confirm Order"}
-              </Button>
+              <Button variant="outline" onClick={() => setStep("info")} className="flex-1">Back</Button>
+              <Button onClick={handleSend} disabled={loading} className="flex-1">{loading ? "Sending..." : "Confirm Order"}</Button>
             </div>
           </div>
         )}
