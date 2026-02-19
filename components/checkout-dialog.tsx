@@ -1,4 +1,3 @@
-// components/checkout-dialog.tsx
 "use client"
 
 import { useState } from "react"
@@ -15,8 +14,8 @@ import { useCart } from "@/lib/cart-store"
 import ProductRating from "@/components/ProductRating"
 import RecommendedProducts from "@/components/RecommendedProducts"
 
-// ✅ استبدل هذه الدالة بالمنتجات التجريبية لديك
-import { getAllSiteProducts } from "@/lib/site-products"
+// ✅ استيراد البيانات من lib/data
+import { products } from "@/lib/data"
 
 interface Props {
   open: boolean
@@ -42,8 +41,7 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 
   // استخراج الفئة من أول منتج في السلة
   const purchasedCategory = cartState.items.length > 0 ? cartState.items[0].category : ""
-  const purchasedId = cartState.items.length > 0 ? cartState.items[0].id : undefined
-  const allProducts = getAllSiteProducts()
+  const allProducts = products // استخدام البيانات من lib/data
 
   const handleSend = async () => {
     if (payment === "shamcash" && !proof) { alert("يجب رفع صورة إشعار الدفع لإتمام الطلب"); return }
@@ -105,12 +103,8 @@ ${productsText}
             {/* تقييم المنتج */}
             <ProductRating />
 
-            {/* عرض 6 منتجات من نفس القسم بعد الشراء والتقييم */}
-            <RecommendedProducts
-              purchasedCategory={purchasedCategory}
-              allProducts={allProducts}
-              purchasedId={purchasedId}
-            />
+            {/* عرض 6 منتجات من نفس القسم */}
+            <RecommendedProducts purchasedCategory={purchasedCategory} allProducts={allProducts} />
 
             <Button onClick={closeAll} className="w-full">Back to Store</Button>
           </div>
