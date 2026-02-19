@@ -11,6 +11,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Upload, ShoppingBag } from "lucide-react"
 import { useCart } from "@/lib/cart-store"
 
+import ProductRating from "@/components/ProductRating"
+import RecommendedProducts from "@/components/RecommendedProducts"
+
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -34,6 +37,23 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
   const [proof, setProof] = useState<File | null>(null)
 
   const total = cartState.items.reduce((s, i) => s + i.price * i.quantity, 0)
+
+  const syrianGovernorates = [
+    "Damascus",
+    "Rif Dimashq",
+    "Aleppo",
+    "Homs",
+    "Hama",
+    "Latakia",
+    "Tartus",
+    "Idlib",
+    "Deir ez-Zor",
+    "Al-Hasakah",
+    "Ar-Raqqah",
+    "Daraa",
+    "As-Suwayda",
+    "Quneitra",
+  ]
 
   const validate = () =>
     form.name && form.phone && form.city && form.address
@@ -97,11 +117,21 @@ ${products}
 
         {/* SUCCESS */}
         {step === "success" && (
-          <div className="text-center space-y-4 py-6">
-            <p className="text-green-600 font-semibold">
-              Order sent successfully ✅
-            </p>
-            <Button onClick={closeAll}>Back to Store</Button>
+          <div className="space-y-6 py-6">
+
+            <div className="text-center">
+              <p className="text-green-600 font-semibold">
+                Order sent successfully ✅
+              </p>
+            </div>
+
+            <ProductRating />
+
+            <RecommendedProducts />
+
+            <Button onClick={closeAll} className="w-full">
+              Back to Store
+            </Button>
           </div>
         )}
 
@@ -127,9 +157,11 @@ ${products}
                 <SelectValue placeholder="Select City" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Damascus">Damascus</SelectItem>
-                <SelectItem value="Aleppo">Aleppo</SelectItem>
-                <SelectItem value="Homs">Homs</SelectItem>
+                {syrianGovernorates.map((g) => (
+                  <SelectItem key={g} value={g}>
+                    {g}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
