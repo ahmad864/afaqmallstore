@@ -22,30 +22,23 @@ export default function OrderForm() {
     setSuccess("")
 
     try {
+      // رفع الصورة إذا موجودة
       let receiptUrl = ""
       if (form.receipt) {
         receiptUrl = await uploadReceipt(form.receipt, Date.now().toString())
       }
 
-      // إرسال البيانات إلى Supabase (مستقل)
-      const resSupabase = await fetch("/api/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, receiptUrl }),
-      })
-      const dataSupabase = await resSupabase.json()
-      if (!dataSupabase.success) throw new Error(dataSupabase.error || "Failed to save order in Supabase")
-
-      // إرسال البيانات إلى Telegram (مستقل) عبر send-telegram
+      // إرسال البيانات مباشرة إلى Telegram عبر API route
       const resTelegram = await fetch("/api/send-telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, receiptUrl }),
       })
+
       const dataTelegram = await resTelegram.json()
       if (!dataTelegram.success) throw new Error(dataTelegram.error || "Failed to send Telegram notification")
 
-      setSuccess("Order submitted successfully!")
+      setSuccess("Order sent to Telegram successfully!")
       setForm({ name: "", phone: "", city: "", note: "", receipt: null })
 
     } catch (err: any) {
@@ -61,13 +54,45 @@ export default function OrderForm() {
       {error && <p className="text-red-500">{error}</p>}
       {success && <p className="text-green-500">{success}</p>}
 
-      <input type="text" placeholder="Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
-      <input type="text" placeholder="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required />
-      <input type="text" placeholder="City" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} required />
-      <textarea placeholder="Note (optional)" value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} />
-      <input type="file" accept="image/*" onChange={e => setForm({ ...form, receipt: e.target.files?.[0] || null })} required />
+      <input
+        type="text"
+        placeholder="Name"
+        value={form.name}
+        onChange={e => setForm({ ...form, name: e.target.value })}
+        required
+      />
 
-      <button type="submit" disabled={loading}>{loading ? "Submitting..." : "Submit Order"}</button>
+      <input
+        type="text"
+        placeholder="Phone"
+        value={form.phone}
+        onChange={e => setForm({ ...form, phone: e.target.value })}
+        required
+      />
+
+      <input
+        type="text"
+        placeholder="City"
+        value={form.city}
+        onChange={e => setForm({ ...form, city: e.target.value })}
+        required
+      />
+
+      <textarea
+        placeholder="Note (optional)"
+        value={form.note}
+        onChange={e => setForm({ ...form, note: e.target.value })}
+      />
+
+      <input
+        type="file"
+        accept="image/*"
+        onChange={e => setForm({ ...form, receipt: e.target.files?.[0] || null })}
+      />
+
+      <button type="submit" disabled={loading}>
+        {loading ? "Submitting..." : "Submit Order"}
+      </button>
     </form>
   )
 }
