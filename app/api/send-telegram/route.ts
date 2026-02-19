@@ -3,8 +3,10 @@ import { NextResponse } from 'next/server'
 export async function POST(req: Request) {
   try {
     const { name, phone, city, note, receiptUrl } = await req.json()
-    const telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN
-    const telegramChatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID
+
+    // ⚡ هنا بدون NEXT_PUBLIC لأننا على السيرفر
+    const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN
+    const telegramChatId = process.env.TELEGRAM_CHAT_ID
 
     const message = `
 📦 *New Order Received*
@@ -20,6 +22,7 @@ export async function POST(req: Request) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: telegramChatId, text: message, parse_mode: "Markdown" })
     })
+
     const data = await res.json()
     if (!data.ok) throw new Error(JSON.stringify(data))
 
