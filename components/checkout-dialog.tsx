@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useCart } from "@/lib/cart-store"
 import { useProducts } from "@/lib/products-store"
-import { getProductsByCategory, type CategorySlug } from "@/lib/data"
+import { getProductsByCategory } from "@/lib/data"
 import { ProductCard } from "@/components/product-card"
 import { ShoppingBag, Upload, ChevronLeft, ChevronRight } from "lucide-react"
 
@@ -76,19 +76,12 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
 
       const msg = `New Order from AfaqMall!\n\nCustomer: ${customerInfo.fullName}\nPhone: ${customerInfo.phone}\nGovernorate: ${customerInfo.governorate}\nAddress: ${customerInfo.address}\n\nProducts:\n${productLines}\n\nTotal: $${totalPrice}\nPayment: ${paymentMethod === "paypal" ? "PayPal" : "Sham Cash"}${proofImage ? "\nPayment proof uploaded" : ""}`
 
-      // Send to Telegram (replace with your bot token and chat ID)
-      // This is a placeholder - you would configure this with real credentials
-      try {
-        const TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN"
-        const TELEGRAM_CHAT_ID = "YOUR_CHAT_ID"
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg }),
-        }).catch(() => {})
-      } catch {
-        // Telegram sending is optional, order still proceeds
-      }
+      // Send to Telegram via internal API route
+      await fetch("/api/send-telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: msg }),
+      })
 
       // Save purchased categories and item IDs for suggestions
       const { state: productsState } = productsContext
@@ -101,7 +94,8 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
 
       setStep("success")
       cartDispatch({ type: "CLEAR_CART" })
-    } catch {
+    } catch (err) {
+      console.error(err)
       alert("An error occurred. Please try again.")
     } finally {
       setIsSubmitting(false)
@@ -136,7 +130,6 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
             {/* Suggested Products Carousel */}
             <SuggestedProducts categories={purchasedCategories} excludeIds={purchasedItemIds} />
 
-            {/* Back to store */}
             <Button onClick={handleClose} className="bg-primary text-primary-foreground hover:bg-primary/90">
               Back to Store
             </Button>
@@ -157,156 +150,188 @@ export function CheckoutDialog({ open, onOpenChange }: CheckoutDialogProps) {
         </DialogHeader>
 
         {step === "info" && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name *</Label>
-              <Input
-                id="fullName"
-                value={customerInfo.fullName}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, fullName: e.target.value })}
-                className={errors.fullName ? "border-destructive" : ""}
-                placeholder="Enter your full name"
-              />
-              {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number *</Label>
-              <Input
-                id="phone"
-                value={customerInfo.phone}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                className={errors.phone ? "border-destructive" : ""}
-                placeholder="+963 xxx xxx xxxx"
-                dir="ltr"
-              />
-              {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="governorate">Syrian Governorate *</Label>
-              <Select
-                value={customerInfo.governorate}
-                onValueChange={(v) => setCustomerInfo({ ...customerInfo, governorate: v })}
-              >
-                <SelectTrigger className={errors.governorate ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select governorate" />
-                </SelectTrigger>
-                <SelectContent>
-                  {syrianGovernorates.map((g) => (
-                    <SelectItem key={g} value={g}>{g}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.governorate && <p className="text-sm text-destructive">{errors.governorate}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Full Address *</Label>
-              <Textarea
-                id="address"
-                value={customerInfo.address}
-                onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
-                className={errors.address ? "border-destructive" : ""}
-                placeholder="Street, building, floor..."
-                rows={3}
-              />
-              {errors.address && <p className="text-sm text-destructive">{errors.address}</p>}
-            </div>
-
-            {/* Order summary */}
-            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-              <h4 className="font-semibold text-sm">Order Summary</h4>
-              {cartState.items.map((item) => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span className="truncate flex-1">{item.name} x{item.quantity}</span>
-                  <span className="font-medium ml-2">${item.price * item.quantity}</span>
-                </div>
-              ))}
-              <Separator />
-              <div className="flex justify-between font-bold">
-                <span>Total</span>
-                <span className="text-primary">${totalPrice}</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">Cancel</Button>
-              <Button onClick={handleNext} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
-                Next: Payment
-              </Button>
-            </div>
-          </div>
+          <CustomerInfoForm
+            customerInfo={customerInfo}
+            setCustomerInfo={setCustomerInfo}
+            errors={errors}
+            totalPrice={totalPrice}
+            cartItems={cartState.items}
+            onNext={handleNext}
+            onCancel={() => onOpenChange(false)}
+          />
         )}
 
         {step === "payment" && (
-          <div className="space-y-4">
-            <RadioGroup
-              value={paymentMethod}
-              onValueChange={(v) => setPaymentMethod(v as "paypal" | "shamcash")}
-              className="space-y-3"
-            >
-              <div className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 cursor-pointer">
-                <RadioGroupItem value="paypal" id="paypal" />
-                <Label htmlFor="paypal" className="cursor-pointer flex-1">
-                  <span className="font-semibold">PayPal</span>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Send payment to: afaqmall@paypal.com. Include your order number in the note.
-                  </p>
-                </Label>
-              </div>
-              <div className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 cursor-pointer">
-                <RadioGroupItem value="shamcash" id="shamcash" />
-                <Label htmlFor="shamcash" className="cursor-pointer flex-1">
-                  <span className="font-semibold">Sham Cash</span>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Send to wallet: <code className="bg-muted px-1 rounded font-mono">SC-AFAQ-2026-MALL</code>
-                  </p>
-                </Label>
-              </div>
-            </RadioGroup>
-
-            {paymentMethod === "shamcash" && (
-              <div className="space-y-2">
-                <Label>Upload Payment Proof</Label>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                    <Upload className="h-4 w-4" />
-                    <span className="text-sm">{proofImage ? proofImage.name : "Choose file"}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => setProofImage(e.target.files?.[0] || null)}
-                    />
-                  </label>
-                </div>
-              </div>
-            )}
-
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total to pay</span>
-                <span className="text-primary">${totalPrice}</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep("info")} className="flex-1">Back</Button>
-              <Button
-                onClick={handlePaymentComplete}
-                disabled={isSubmitting}
-                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {isSubmitting ? "Processing..." : "Payment Completed"}
-              </Button>
-            </div>
-          </div>
+          <PaymentForm
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+            proofImage={proofImage}
+            setProofImage={setProofImage}
+            totalPrice={totalPrice}
+            onBack={() => setStep("info")}
+            onComplete={handlePaymentComplete}
+            isSubmitting={isSubmitting}
+          />
         )}
       </DialogContent>
     </Dialog>
   )
 }
+
+// ----------------------- Subcomponents -----------------------
+
+function CustomerInfoForm({ customerInfo, setCustomerInfo, errors, totalPrice, cartItems, onNext, onCancel }: any) {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="fullName">Full Name *</Label>
+        <Input
+          id="fullName"
+          value={customerInfo.fullName}
+          onChange={(e) => setCustomerInfo({ ...customerInfo, fullName: e.target.value })}
+          className={errors.fullName ? "border-destructive" : ""}
+          placeholder="Enter your full name"
+        />
+        {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="phone">Phone Number *</Label>
+        <Input
+          id="phone"
+          value={customerInfo.phone}
+          onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+          className={errors.phone ? "border-destructive" : ""}
+          placeholder="+963 xxx xxx xxxx"
+          dir="ltr"
+        />
+        {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="governorate">Syrian Governorate *</Label>
+        <Select
+          value={customerInfo.governorate}
+          onValueChange={(v) => setCustomerInfo({ ...customerInfo, governorate: v })}
+        >
+          <SelectTrigger className={errors.governorate ? "border-destructive" : ""}>
+            <SelectValue placeholder="Select governorate" />
+          </SelectTrigger>
+          <SelectContent>
+            {syrianGovernorates.map((g) => (
+              <SelectItem key={g} value={g}>{g}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.governorate && <p className="text-sm text-destructive">{errors.governorate}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="address">Full Address *</Label>
+        <Textarea
+          id="address"
+          value={customerInfo.address}
+          onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
+          className={errors.address ? "border-destructive" : ""}
+          placeholder="Street, building, floor..."
+          rows={3}
+        />
+        {errors.address && <p className="text-sm text-destructive">{errors.address}</p>}
+      </div>
+
+      <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+        <h4 className="font-semibold text-sm">Order Summary</h4>
+        {cartItems.map((item: any) => (
+          <div key={item.id} className="flex justify-between text-sm">
+            <span className="truncate flex-1">{item.name} x{item.quantity}</span>
+            <span className="font-medium ml-2">${item.price * item.quantity}</span>
+          </div>
+        ))}
+        <Separator />
+        <div className="flex justify-between font-bold">
+          <span>Total</span>
+          <span className="text-primary">${totalPrice}</span>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <Button variant="outline" onClick={onCancel} className="flex-1">Cancel</Button>
+        <Button onClick={onNext} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
+          Next: Payment
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function PaymentForm({ paymentMethod, setPaymentMethod, proofImage, setProofImage, totalPrice, onBack, onComplete, isSubmitting }: any) {
+  return (
+    <div className="space-y-4">
+      <RadioGroup
+        value={paymentMethod}
+        onValueChange={(v) => setPaymentMethod(v as "paypal" | "shamcash")}
+        className="space-y-3"
+      >
+        <div className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 cursor-pointer">
+          <RadioGroupItem value="paypal" id="paypal" />
+          <Label htmlFor="paypal" className="cursor-pointer flex-1">
+            <span className="font-semibold">PayPal</span>
+            <p className="text-sm text-muted-foreground mt-1">
+              Send payment to: afaqmall@paypal.com. Include your order number in the note.
+            </p>
+          </Label>
+        </div>
+        <div className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 cursor-pointer">
+          <RadioGroupItem value="shamcash" id="shamcash" />
+          <Label htmlFor="shamcash" className="cursor-pointer flex-1">
+            <span className="font-semibold">Sham Cash</span>
+            <p className="text-sm text-muted-foreground mt-1">
+              Send to wallet: <code className="bg-muted px-1 rounded font-mono">SC-AFAQ-2026-MALL</code>
+            </p>
+          </Label>
+        </div>
+      </RadioGroup>
+
+      {paymentMethod === "shamcash" && (
+        <div className="space-y-2">
+          <Label>Upload Payment Proof</Label>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+              <Upload className="h-4 w-4" />
+              <span className="text-sm">{proofImage ? proofImage.name : "Choose file"}</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => setProofImage(e.target.files?.[0] || null)}
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-muted/50 p-4 rounded-lg">
+        <div className="flex justify-between font-bold text-lg">
+          <span>Total to pay</span>
+          <span className="text-primary">${totalPrice}</span>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <Button variant="outline" onClick={onBack} className="flex-1">Back</Button>
+        <Button
+          onClick={onComplete}
+          disabled={isSubmitting}
+          className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {isSubmitting ? "Processing..." : "Payment Completed"}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ----------------------- Rating & Suggested Products -----------------------
 
 function RatingSection() {
   const [rating, setRating] = useState(0)
