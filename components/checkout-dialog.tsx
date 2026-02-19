@@ -50,7 +50,6 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
     cartState.items.length > 0 ? (cartState.items[0] as any).category : ""
 
   const handleSend = async () => {
-    // إجبار رفع صورة إذا كان الدفع ShamCash
     if (payment === "shamcash" && !proof) {
       alert("يجب رفع صورة إشعار الدفع لإتمام الطلب")
       return
@@ -58,12 +57,10 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 
     setLoading(true)
 
-    // نص المنتجات
     const productsText = cartState.items
       .map(i => `• ${i.name} x${i.quantity} = $${i.price * i.quantity}`)
       .join("\n")
 
-    // نص الرسالة الكامل
     const message = `
 🛒 New Order
 
@@ -80,7 +77,6 @@ ${productsText}
 `
 
     try {
-      // إرسال FormData للـ Telegram
       const formData = new FormData()
       formData.append("message", message)
       if (proof) formData.append("proof", proof)
@@ -129,7 +125,7 @@ ${productsText}
 
             <ProductRating />
 
-            {/* عرض المنتجات المشابهة بناء على الفئة المشتراة */}
+            {/* تمرير الفئة تلقائيًا للمنتجات المقترحة */}
             <RecommendedProducts category={purchasedCategory} />
 
             <Button onClick={closeAll} className="w-full">
