@@ -25,7 +25,7 @@ export default function OrderForm() {
         receiptUrl = await uploadReceipt(form.receipt, Date.now().toString())
       }
 
-      // إرسال البيانات إلى API route
+      // إرسال البيانات إلى API route بشكل مستقل عن Supabase للتليجرام
       const res = await fetch("/api/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
