@@ -11,11 +11,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Upload, ShoppingBag } from "lucide-react"
 import { useCart } from "@/lib/cart-store"
 
-import ProductRating from "@/components/ProductRating"
+import { RatingSection } from "@/components/RatingSection"
 import RecommendedProducts from "@/components/RecommendedProducts"
-
-// ✅ استيراد البيانات من lib/data
-import { products } from "@/lib/data"
+import { allProducts } from "@/lib/data" // ← البيانات من ملف data مباشرة
 
 interface Props {
   open: boolean
@@ -34,17 +32,21 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
   const [proof, setProof] = useState<File | null>(null)
 
   const total = cartState.items.reduce((s, i) => s + i.price * i.quantity, 0)
-  const syrianGovernorates = ["Damascus","Rif Dimashq","Aleppo","Homs","Hama","Latakia","Tartus",
-    "Idlib","Deir ez-Zor","Al-Hasakah","Ar-Raqqah","Daraa","As-Suwayda","Quneitra"]
+  const syrianGovernorates = [
+    "Damascus","Rif Dimashq","Aleppo","Homs","Hama","Latakia","Tartus",
+    "Idlib","Deir ez-Zor","Al-Hasakah","Ar-Raqqah","Daraa","As-Suwayda","Quneitra"
+  ]
 
   const validate = () => form.name && form.phone && form.city && form.address
 
-  // استخراج الفئة من أول منتج في السلة
-  const purchasedCategory = cartState.items.length > 0 ? cartState.items[0].category : ""
-  const allProducts = products // استخدام البيانات من lib/data
+  // تحديد أول منتج تم شراؤه للعرض المقترح
+  const purchasedItem = cartState.items[0]
 
   const handleSend = async () => {
-    if (payment === "shamcash" && !proof) { alert("يجب رفع صورة إشعار الدفع لإتمام الطلب"); return }
+    if (payment === "shamcash" && !proof) { 
+      alert("يجب رفع صورة إشعار الدفع لإتمام الطلب"); 
+      return 
+    }
     setLoading(true)
 
     const productsText = cartState.items.map(i => `• ${i.name} x${i.quantity} = $${i.price * i.quantity}`).join("\n")
@@ -94,17 +96,21 @@ ${productsText}
           </DialogTitle>
         </DialogHeader>
 
-        {step === "success" && (
+        {step === "success" && purchasedItem && (
           <div className="space-y-6 py-6">
             <div className="text-center">
               <p className="text-green-600 font-semibold">Order sent successfully ✅</p>
             </div>
 
             {/* تقييم المنتج */}
-            <ProductRating />
+            <RatingSection />
 
-            {/* عرض 6 منتجات من نفس القسم */}
-            <RecommendedProducts purchasedCategory={purchasedCategory} allProducts={allProducts} />
+            {/* عرض 6 منتجات من نفس القسم باستثناء المنتج الذي تم شراؤه */}
+            <RecommendedProducts 
+              purchasedCategory={purchasedItem.category} 
+              purchasedId={purchasedItem.id} 
+              allProducts={allProducts} 
+            />
 
             <Button onClick={closeAll} className="w-full">Back to Store</Button>
           </div>
