@@ -1,3 +1,6 @@
+// components/RecommendedProducts.tsx
+"use client"
+
 interface Props {
   purchasedCategory: string
   allProducts: Array<{ id: number; name: string; category: string; image: string; price: number }>
