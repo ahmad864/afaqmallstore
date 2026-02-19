@@ -1,69 +1,36 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useProducts } from "@/context/products-context"
+import type { Product } from "@/lib/data"
 
-interface Product {
-  id: number
-  name: string
-  price: number
-  image: string
-  category: string
+interface RecommendedProps {
+  currentProduct: Product
 }
 
-interface Props {
-  purchasedCategory?: string
-  allProducts: Product[]
-}
+export default function RecommendedProducts({ currentProduct }: RecommendedProps) {
+  const { state } = useProducts()
 
-export default function RecommendedProducts({ purchasedCategory, allProducts }: Props) {
-  const [products, setProducts] = useState<Product[]>([])
+  // اختيار 6 منتجات من نفس الفئة باستثناء المنتج الحالي
+  const recommended = state.products
+    .filter(p => p.category === currentProduct.category && p.id !== currentProduct.id)
+    .slice(0, 6)
 
-  useEffect(() => {
-    if (!allProducts || !allProducts.length) {
-      setProducts([])
-      return
-    }
-
-    // منتجات من نفس الفئة
-    let filtered = purchasedCategory
-      ? allProducts.filter(p => p.category === purchasedCategory)
-      : []
-
-    // إذا لا توجد منتجات كافية، نأخذ أي منتجات من الموقع
-    if (filtered.length === 0) filtered = allProducts
-
-    // تكرار المنتجات إذا أقل من 6
-    while (filtered.length < 6) {
-      filtered = filtered.concat(filtered)
-    }
-
-    setProducts(filtered.slice(0, 6))
-  }, [purchasedCategory, allProducts])
-
-  if (!products.length) return null
+  if (recommended.length === 0) return null
 
   return (
-    <div className="mt-4">
-      <h4 className="font-bold mb-2 text-sm">Recommended for you</h4>
-      <div className="grid grid-cols-2 gap-3">
-        {products.map(p => (
-          <Card key={p.id} className="border">
-            <CardHeader className="p-2">
-              <CardTitle className="text-xs font-semibold">{p.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-2">
-              {/* object-contain لعرض الصورة كاملة */}
-              <img
-                src={p.image}
-                alt={p.name}
-                className="w-full h-24 object-contain mb-2 rounded bg-white"
-              />
-              <div className="font-bold text-sm">${p.price}</div>
-              <Button size="sm" className="mt-2 w-full">View</Button>
-            </CardContent>
-          </Card>
+    <div className="mt-6">
+      <h3 className="text-lg font-semibold mb-4">منتجات مشابهة</h3>
+      <div className="grid grid-cols-3 gap-4">
+        {recommended.map(product => (
+          <div key={product.id} className="border p-2 rounded shadow-sm">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-32 object-cover rounded"
+            />
+            <h4 className="font-medium mt-2">{product.name}</h4>
+            <p className="text-sm text-gray-600">${product.price}</p>
+          </div>
         ))}
       </div>
     </div>
