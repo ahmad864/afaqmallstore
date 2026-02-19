@@ -138,7 +138,6 @@ ${productsText}
             <RecommendedProducts
               purchasedCategory={purchasedCategory}
               allProducts={allProducts}
-              cartItems={cartState.items}
             />
 
             <Button onClick={closeAll} className="w-full">
