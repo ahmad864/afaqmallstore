@@ -54,7 +54,12 @@ export default function RecommendedProducts({ purchasedCategory, allProducts }: 
               <CardTitle className="text-xs font-semibold">{p.name}</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
-              <img src={p.image} alt={p.name} className="w-full h-24 object-cover mb-2 rounded" />
+              {/* تعديل هنا: object-contain لضمان عرض الصورة بالكامل */}
+              <img
+                src={p.image}
+                alt={p.name}
+                className="w-full h-24 object-contain mb-2 rounded bg-white"
+              />
               <div className="font-bold text-sm">${p.price}</div>
               <Button size="sm" className="mt-2 w-full">View</Button>
             </CardContent>
