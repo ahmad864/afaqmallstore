@@ -1,18 +1,26 @@
+// components/RecommendedProducts.tsx
 "use client"
 
-import { products } from "@/lib/data"
+interface Product {
+  id: number
+  name: string
+  category: string
+  image: string
+  price: number
+}
 
 interface Props {
   purchasedCategory: string
   purchasedId?: number // لتجنب عرض المنتج نفسه
+  allProducts: Product[]
 }
 
-export default function RecommendedProducts({ purchasedCategory, purchasedId }: Props) {
+export default function RecommendedProducts({ purchasedCategory, purchasedId, allProducts }: Props) {
   // جلب المنتجات من نفس القسم واستبعاد المنتج الذي تم شراؤه
-  const relatedProducts = products
+  const relatedProducts = allProducts
     .filter(p => p.category === purchasedCategory && p.id !== purchasedId)
     .sort(() => 0.5 - Math.random()) // خلط المنتجات عشوائياً
-    .slice(0, 6) // عرض 6 منتجات فقط
+    .slice(0, 6) // عرض حتى 6 منتجات فقط
 
   if (relatedProducts.length === 0) return null
 
