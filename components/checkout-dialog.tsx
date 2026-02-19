@@ -42,6 +42,7 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 
   // استخراج الفئة من أول منتج في السلة
   const purchasedCategory = cartState.items.length > 0 ? cartState.items[0].category : ""
+  const purchasedId = cartState.items.length > 0 ? cartState.items[0].id : undefined
   const allProducts = getAllSiteProducts()
 
   const handleSend = async () => {
@@ -104,8 +105,12 @@ ${productsText}
             {/* تقييم المنتج */}
             <ProductRating />
 
-            {/* عرض 6 منتجات من نفس القسم */}
-            <RecommendedProducts purchasedCategory={purchasedCategory} allProducts={allProducts} />
+            {/* عرض 6 منتجات من نفس القسم بعد الشراء والتقييم */}
+            <RecommendedProducts
+              purchasedCategory={purchasedCategory}
+              allProducts={allProducts}
+              purchasedId={purchasedId}
+            />
 
             <Button onClick={closeAll} className="w-full">Back to Store</Button>
           </div>
