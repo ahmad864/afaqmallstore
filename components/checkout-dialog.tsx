@@ -47,7 +47,19 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 
   // فئة المنتج المشتراة لاستخدامها في المنتجات المقترحة
   const purchasedCategory =
-    cartState.items.length > 0 ? (cartState.items[0] as any).category : ""
+    cartState.items.length > 0 ? cartState.items[0].category : ""
+
+  // تمرير جميع منتجات الموقع (مثال: يمكن جلبها من store أو db)
+  const allProducts = [
+    ...cartState.items,
+    { id: 101, name: "Demo Product 1", price: 50, image: "https://via.placeholder.com/150?text=Demo1", category: "Shoes" },
+    { id: 102, name: "Demo Product 2", price: 40, image: "https://via.placeholder.com/150?text=Demo2", category: "Shoes" },
+    { id: 103, name: "Demo Product 3", price: 20, image: "https://via.placeholder.com/150?text=Demo3", category: "Clothes" },
+    { id: 104, name: "Demo Product 4", price: 30, image: "https://via.placeholder.com/150?text=Demo4", category: "Clothes" },
+    { id: 105, name: "Demo Product 5", price: 60, image: "https://via.placeholder.com/150?text=Demo5", category: "Makeup" },
+    { id: 106, name: "Demo Product 6", price: 80, image: "https://via.placeholder.com/150?text=Demo6", category: "Makeup" },
+    // أضف أي منتجات تجريبية لكل قسم موجود في موقعك
+  ]
 
   const handleSend = async () => {
     if (payment === "shamcash" && !proof) {
@@ -114,7 +126,6 @@ ${productsText}
           </DialogTitle>
         </DialogHeader>
 
-        {/* SUCCESS */}
         {step === "success" && (
           <div className="space-y-6 py-6">
             <div className="text-center">
@@ -125,8 +136,8 @@ ${productsText}
 
             <ProductRating />
 
-            {/* عرض المنتجات المشابهة تلقائي حسب الفئة المشتراة */}
-            <RecommendedProducts purchasedCategory={purchasedCategory} />
+            {/* هنا نمرر الفئة المشتراة وكل المنتجات */}
+            <RecommendedProducts purchasedCategory={purchasedCategory} allProducts={allProducts} />
 
             <Button onClick={closeAll} className="w-full">
               Back to Store
@@ -134,7 +145,6 @@ ${productsText}
           </div>
         )}
 
-        {/* STEP 1 */}
         {step === "info" && (
           <div className="space-y-4">
             <Input
@@ -147,7 +157,6 @@ ${productsText}
               value={form.phone}
               onChange={e => setForm({ ...form, phone: e.target.value })}
             />
-
             <Select
               value={form.city}
               onValueChange={v => setForm({ ...form, city: v })}
@@ -157,19 +166,15 @@ ${productsText}
               </SelectTrigger>
               <SelectContent>
                 {syrianGovernorates.map((g) => (
-                  <SelectItem key={g} value={g}>
-                    {g}
-                  </SelectItem>
+                  <SelectItem key={g} value={g}>{g}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-
             <Textarea
               placeholder="Full Address"
               value={form.address}
               onChange={e => setForm({ ...form, address: e.target.value })}
             />
-
             <div className="bg-muted/50 p-3 rounded">
               <div className="font-semibold text-sm mb-2">Order Summary</div>
               {cartState.items.map(item => (
@@ -184,7 +189,6 @@ ${productsText}
                 <span>${total}</span>
               </div>
             </div>
-
             <Button
               onClick={() => validate() && setStep("payment")}
               className="w-full"
@@ -194,7 +198,6 @@ ${productsText}
           </div>
         )}
 
-        {/* STEP 2 */}
         {step === "payment" && (
           <div className="space-y-4">
             <RadioGroup
@@ -205,13 +208,11 @@ ${productsText}
                 <RadioGroupItem value="paypal" id="paypal" />
                 <Label htmlFor="paypal">PayPal</Label>
               </div>
-
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="shamcash" id="shamcash" />
                 <Label htmlFor="shamcash">ShamCash</Label>
               </div>
             </RadioGroup>
-
             {payment === "shamcash" && (
               <label className="flex flex-col gap-2 border p-2 rounded cursor-pointer">
                 <div className="flex items-center gap-2">
@@ -226,21 +227,11 @@ ${productsText}
                 />
               </label>
             )}
-
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setStep("info")}
-                className="flex-1"
-              >
+              <Button variant="outline" onClick={() => setStep("info")} className="flex-1">
                 Back
               </Button>
-
-              <Button
-                onClick={handleSend}
-                disabled={loading}
-                className="flex-1"
-              >
+              <Button onClick={handleSend} disabled={loading} className="flex-1">
                 {loading ? "Sending..." : "Confirm Order"}
               </Button>
             </div>
