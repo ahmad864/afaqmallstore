@@ -5,6 +5,7 @@ import Image from "next/image"
 import { allProducts, Product } from "@/lib/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { useCart } from "@/lib/cart-store" // استبدل بالمسار الصحيح للـ store الخاص بالسلة
 
 // دالة لاختيار n عنصر عشوائي من مصفوفة
 function getRandomProducts(products: Product[], count: number): Product[] {
@@ -14,6 +15,7 @@ function getRandomProducts(products: Product[], count: number): Product[] {
 
 export default function SuggestedProducts() {
   const suggestedProducts: Product[] = getRandomProducts(allProducts, 6) // 6 منتجات عشوائية
+  const { addToCart } = useCart() // دالة إضافة للسلة
 
   return (
     <div className="mt-6">
@@ -35,7 +37,12 @@ export default function SuggestedProducts() {
               />
               <p className="text-sm text-gray-600">Stock: {product.stock}</p>
               <p className="text-sm text-yellow-500">Rating: {product.rating} ⭐</p>
-              <Button className="mt-2 w-full">Add to Cart</Button>
+              <Button 
+                className="mt-2 w-full" 
+                onClick={() => addToCart(product)} // يضيف المنتج للسلة مباشرة
+              >
+                Add to Cart
+              </Button>
             </CardContent>
           </Card>
         ))}
