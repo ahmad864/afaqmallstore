@@ -2,16 +2,21 @@
 
 import React from "react"
 import Image from "next/image"
-import { getProductsByCategory, Product } from "@/lib/data"
+import { allProducts, Product } from "@/lib/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
 interface SuggestedProductsProps {
-  category: string // اسم الفئة المطلوبة
+  category: string
 }
 
 export default function SuggestedProducts({ category }: SuggestedProductsProps) {
-  const products: Product[] = getProductsByCategory(category).slice(0, 6) // نأخذ أول 6 منتجات فقط
+  // جلب أول 6 منتجات من القسم المطلوب
+  const products: Product[] = allProducts
+    .filter((p) => p.category === category)
+    .slice(0, 6)
+
+  if (products.length === 0) return <p>لا توجد منتجات في هذا القسم</p>
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -19,7 +24,7 @@ export default function SuggestedProducts({ category }: SuggestedProductsProps) 
         <Card key={product.id} className="shadow-md hover:shadow-lg transition p-2">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">{product.name}</CardTitle>
-            <CardDescription className="text-sm text-gray-500">${product.price}</CardDescription>
+            <CardDescription className="text-sm text-gray-500">{product.price} USD</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center">
             <Image
