@@ -14,6 +14,9 @@ import { useCart } from "@/lib/cart-store"
 import ProductRating from "@/components/ProductRating"
 import RecommendedProducts from "@/components/RecommendedProducts"
 
+// ✅ هنا تستبدل getAllSiteProducts بالدالة أو الطريقة التي تجلب كل منتجات الموقع من الأقسام
+import { getAllSiteProducts } from "@/lib/site-products"
+
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -45,19 +48,12 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 
   const validate = () => form.name && form.phone && form.city && form.address
 
-  // استخراج الفئة تلقائياً
+  // استخراج الفئة تلقائياً من أول منتج في السلة
   const purchasedCategory =
     cartState.items.length > 0 ? cartState.items[0].category : ""
 
-  // منتجات تجريبية بدون استدعاء خارجي
-  const allProducts = [
-    { id: 101, name: "Demo Product 1", price: 50, image: "https://via.placeholder.com/150?text=Demo1", category: "Shoes" },
-    { id: 102, name: "Demo Product 2", price: 40, image: "https://via.placeholder.com/150?text=Demo2", category: "Shoes" },
-    { id: 103, name: "Demo Product 3", price: 20, image: "https://via.placeholder.com/150?text=Demo3", category: "Clothes" },
-    { id: 104, name: "Demo Product 4", price: 30, image: "https://via.placeholder.com/150?text=Demo4", category: "Clothes" },
-    { id: 105, name: "Demo Product 5", price: 60, image: "https://via.placeholder.com/150?text=Demo5", category: "Makeup" },
-    { id: 106, name: "Demo Product 6", price: 80, image: "https://via.placeholder.com/150?text=Demo6", category: "Makeup" },
-  ]
+  // كل منتجات الموقع من الأقسام
+  const allProducts = getAllSiteProducts()
 
   const handleSend = async () => {
     if (payment === "shamcash" && !proof) {
@@ -134,7 +130,6 @@ ${productsText}
 
             <ProductRating />
 
-            {/* المنتجات المقترحة */}
             <RecommendedProducts
               purchasedCategory={purchasedCategory}
               allProducts={allProducts}
