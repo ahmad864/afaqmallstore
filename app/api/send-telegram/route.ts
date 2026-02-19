@@ -4,8 +4,8 @@ export async function POST(req: Request) {
   try {
     const { name, phone, city, note, receiptUrl } = await req.json();
 
-    const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN; // **بدون NEXT_PUBLIC**
-    const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+    const telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN
+    const telegramChatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID
 
     const message = `
 📦 *New Order Received*
