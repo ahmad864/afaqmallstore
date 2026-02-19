@@ -21,13 +21,26 @@ export default function OrderForm() {
     setError("")
 
     try {
+      // رفع الايصال إلى Supabase Storage
       let receiptUrl = ""
       if (form.receipt) {
         receiptUrl = await uploadReceipt(form.receipt, Date.now().toString())
       }
 
-      // إرسال البيانات إلى API route
-      const res = await fetch('/api/order', {
+      // 1️⃣ حفظ الأوردر في Supabase
+      const { error: supabaseError } = await supabase
+        .from("orders")
+        .insert([{
+          name: form.name,
+          phone: form.phone,
+          city: form.city,
+          note: form.note,
+          receipt_url: receiptUrl
+        }])
+      if (supabaseError) throw supabaseError
+
+      // 2️⃣ إرسال رسالة مستقلة للتليجرام عبر API route
+      const telegramRes = await fetch('/api/send-telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -38,9 +51,8 @@ export default function OrderForm() {
           receiptUrl
         })
       })
-
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error || 'Failed to submit order')
+      const telegramData = await telegramRes.json()
+      if (!telegramData.success) throw new Error(telegramData.error || "Failed to send Telegram message")
 
       alert("Order submitted successfully!")
       setForm({ name: "", phone: "", city: "", note: "", receipt: null })
