@@ -58,18 +58,31 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 
     setLoading(true)
 
-    const products = cartState.items
+    // تجميع المنتجات في نص
+    const productsText = cartState.items
       .map(i => `• ${i.name} x${i.quantity} = $${i.price * i.quantity}`)
       .join("\n")
+
+    // نص الرسالة الكامل
+    const message = `
+🛒 New Order
+
+👤 Name: ${form.name}
+📞 Phone: ${form.phone}
+🏙 City: ${form.city}
+📍 Address: ${form.address}
+💳 Payment: ${payment}
+
+📦 Products:
+${productsText}
+
+💰 Total: $${total}
+`
 
     try {
       // إرسال بيانات + صورة (إذا موجودة) إلى Telegram
       const formData = new FormData()
-      formData.append("name", form.name)
-      formData.append("phone", form.phone)
-      formData.append("city", form.city)
-      formData.append("address", form.address)
-      formData.append("payment", payment)
+      formData.append("message", message)
       if (proof) formData.append("proof", proof)
 
       await fetch("/api/send-telegram", {
