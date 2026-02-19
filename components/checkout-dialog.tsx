@@ -58,6 +58,10 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
   const validate = () =>
     form.name && form.phone && form.city && form.address
 
+  // نحدد القسم الذي اشترى منه العميل لاستخدامه في المنتجات المقترحة
+  const purchasedCategory =
+    cartState.items.length > 0 ? (cartState.items[0] as any).category : ""
+
   const handleSend = async () => {
     setLoading(true)
 
@@ -125,9 +129,11 @@ ${products}
               </p>
             </div>
 
+            {/* تقييم المنتج */}
             <ProductRating />
 
-            <RecommendedProducts />
+            {/* المنتجات المقترحة */}
+            <RecommendedProducts category={purchasedCategory} />
 
             <Button onClick={closeAll} className="w-full">
               Back to Store
