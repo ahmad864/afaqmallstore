@@ -26,12 +26,12 @@ export default function RecommendedProducts({ purchasedCategory, allProducts }: 
       return
     }
 
-    // منتجات بنفس الفئة
+    // منتجات من نفس الفئة
     let filtered = purchasedCategory
       ? allProducts.filter(p => p.category === purchasedCategory)
       : []
 
-    // إذا لا توجد منتجات بنفس الفئة، نأخذ أي منتجات عشوائية
+    // إذا لا توجد منتجات كافية، نأخذ أي منتجات من الموقع
     if (filtered.length === 0) filtered = allProducts
 
     // تكرار المنتجات إذا أقل من 6
@@ -54,7 +54,7 @@ export default function RecommendedProducts({ purchasedCategory, allProducts }: 
               <CardTitle className="text-xs font-semibold">{p.name}</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
-              {/* تعديل هنا: object-contain لضمان عرض الصورة بالكامل */}
+              {/* object-contain لعرض الصورة كاملة */}
               <img
                 src={p.image}
                 alt={p.name}
