@@ -13,11 +13,13 @@ export default function OrderForm() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
+    setSuccess("")
 
     try {
       let receiptUrl = ""
@@ -25,8 +27,8 @@ export default function OrderForm() {
         receiptUrl = await uploadReceipt(form.receipt, Date.now().toString())
       }
 
-      // إرسال البيانات إلى API route بشكل مستقل عن Supabase للتليجرام
-      const res = await fetch("/api/order", {
+      // إرسال البيانات إلى Telegram بشكل مستقل
+      const resTelegram = await fetch("/api/send-telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -38,10 +40,10 @@ export default function OrderForm() {
         }),
       })
 
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error || "Failed to submit order")
+      const dataTelegram = await resTelegram.json()
+      if (!dataTelegram.success) throw new Error(dataTelegram.error || "Failed to send Telegram notification")
 
-      alert("Order submitted successfully!")
+      setSuccess("Order submitted successfully!")
       setForm({ name: "", phone: "", city: "", note: "", receipt: null })
 
     } catch (err: any) {
@@ -55,6 +57,7 @@ export default function OrderForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && <p className="text-red-500">{error}</p>}
+      {success && <p className="text-green-500">{success}</p>}
 
       <input
         type="text"
