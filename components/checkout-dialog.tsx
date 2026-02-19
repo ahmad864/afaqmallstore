@@ -39,56 +39,42 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
   const total = cartState.items.reduce((s, i) => s + i.price * i.quantity, 0)
 
   const syrianGovernorates = [
-    "Damascus",
-    "Rif Dimashq",
-    "Aleppo",
-    "Homs",
-    "Hama",
-    "Latakia",
-    "Tartus",
-    "Idlib",
-    "Deir ez-Zor",
-    "Al-Hasakah",
-    "Ar-Raqqah",
-    "Daraa",
-    "As-Suwayda",
-    "Quneitra",
+    "Damascus","Rif Dimashq","Aleppo","Homs","Hama","Latakia","Tartus",
+    "Idlib","Deir ez-Zor","Al-Hasakah","Ar-Raqqah","Daraa","As-Suwayda","Quneitra",
   ]
 
-  const validate = () =>
-    form.name && form.phone && form.city && form.address
+  const validate = () => form.name && form.phone && form.city && form.address
 
   // فئة المنتج المشتراة لاستخدامها في المنتجات المقترحة
   const purchasedCategory =
     cartState.items.length > 0 ? (cartState.items[0] as any).category : ""
 
   const handleSend = async () => {
+    // ✅ تحقق من رفع صورة إذا كان الدفع ShamCash
+    if (payment === "shamcash" && !proof) {
+      alert("يجب رفع صورة إشعار الدفع لإتمام الطلب")
+      return
+    }
+
     setLoading(true)
 
     const products = cartState.items
       .map(i => `• ${i.name} x${i.quantity} = $${i.price * i.quantity}`)
       .join("\n")
 
-    const message = `
-🛒 New Order
-
-👤 Name: ${form.name}
-📞 Phone: ${form.phone}
-🏙 City: ${form.city}
-📍 Address: ${form.address}
-
-📦 Products:
-${products}
-
-💰 Total: $${total}
-💳 Payment: ${payment}
-`
-
     try {
+      // إرسال بيانات + صورة (إذا موجودة) إلى Telegram
+      const formData = new FormData()
+      formData.append("name", form.name)
+      formData.append("phone", form.phone)
+      formData.append("city", form.city)
+      formData.append("address", form.address)
+      formData.append("payment", payment)
+      if (proof) formData.append("proof", proof)
+
       await fetch("/api/send-telegram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: formData,
       })
 
       dispatch({ type: "CLEAR_CART" })
@@ -128,10 +114,7 @@ ${products}
               </p>
             </div>
 
-            {/* تقييم المنتج */}
             <ProductRating />
-
-            {/* المنتجات المقترحة حسب فئة المشتريات */}
             <RecommendedProducts category={purchasedCategory} />
 
             <Button onClick={closeAll} className="w-full">
@@ -219,11 +202,14 @@ ${products}
             </RadioGroup>
 
             {payment === "shamcash" && (
-              <label className="flex items-center gap-2 border p-2 rounded cursor-pointer">
-                <Upload className="h-4 w-4" />
-                {proof ? proof.name : "Upload Payment Proof"}
+              <label className="flex flex-col gap-2 border p-2 rounded cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  <span>{proof ? proof.name : "Upload Payment Proof *"}</span>
+                </div>
                 <input
                   type="file"
+                  accept="image/*"
                   className="hidden"
                   onChange={e => setProof(e.target.files?.[0] || null)}
                 />
