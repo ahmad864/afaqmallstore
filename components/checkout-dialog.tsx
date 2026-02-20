@@ -234,12 +234,16 @@ ${productsText}
 
             {/* ShamCash */}
             {payment === "shamcash" && (
-              <div className="flex flex-col gap-2 border p-2 rounded">
-                <p className="font-semibold text-gray-700 text-center">
+              <div className="flex flex-col gap-2 border p-3 rounded items-center">
+                <p className="font-bold text-gray-800 text-center text-lg">
                   محفظة Sham Cash
                 </p>
-                <label className="flex flex-col gap-2 cursor-pointer">
-                  <div className="flex items-center gap-2">
+                <p className="font-bold text-gray-800 text-center text-lg">
+                  fe9456d8af5c4599f1c4407fa97df0fc
+                </p>
+
+                <label className="flex flex-col gap-2 mt-2 cursor-pointer w-full">
+                  <div className="flex items-center justify-center gap-2 p-2 border rounded">
                     <Upload className="h-4 w-4" />
                     <span>{proof ? proof.name : "Upload Payment Proof *"}</span>
                   </div>
