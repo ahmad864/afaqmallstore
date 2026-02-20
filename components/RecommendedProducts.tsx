@@ -5,7 +5,7 @@ import Image from "next/image"
 import { allProducts, Product } from "@/lib/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useCart } from "@/lib/cart-store" // استبدل بالمسار الصحيح للـ store الخاص بالسلة
+import { useCart } from "@/lib/cart-store" // تأكد من المسار الصحيح
 
 // دالة لاختيار n عنصر عشوائي من مصفوفة
 function getRandomProducts(products: Product[], count: number): Product[] {
@@ -13,15 +13,29 @@ function getRandomProducts(products: Product[], count: number): Product[] {
   return shuffled.slice(0, count)
 }
 
-export default function SuggestedProducts() {
-  const suggestedProducts: Product[] = getRandomProducts(allProducts, 6) // 6 منتجات عشوائية
-  const { addToCart } = useCart() // دالة إضافة للسلة
+export default function RecommendedProducts() {
+  const recommendedProducts: Product[] = getRandomProducts(allProducts, 6) // 6 منتجات عشوائية
+  const { dispatch } = useCart() // استخدام dispatch للسلة
+
+  // دالة لإضافة منتج للسلة عند الضغط على الزر
+  const handleAddToCart = (product: Product) => {
+    dispatch({
+      type: "ADD_ITEM",
+      payload: {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        quantity: 1,
+      },
+    })
+  }
 
   return (
     <div className="mt-6">
       <h2 className="text-xl font-bold mb-4">منتجات مقترحة</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {suggestedProducts.map((product) => (
+        {recommendedProducts.map((product) => (
           <Card key={product.id} className="shadow-md hover:shadow-lg transition p-2">
             <CardHeader>
               <CardTitle className="text-lg font-semibold">{product.name}</CardTitle>
@@ -37,9 +51,9 @@ export default function SuggestedProducts() {
               />
               <p className="text-sm text-gray-600">Stock: {product.stock}</p>
               <p className="text-sm text-yellow-500">Rating: {product.rating} ⭐</p>
-              <Button 
-                className="mt-2 w-full" 
-                onClick={() => addToCart(product)} // يضيف المنتج للسلة مباشرة
+              <Button
+                className="mt-2 w-full"
+                onClick={() => handleAddToCart(product)} // الزر الآن يعمل ويضيف للسلة
               >
                 Add to Cart
               </Button>
