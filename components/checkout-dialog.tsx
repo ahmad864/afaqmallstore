@@ -31,6 +31,7 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
     phone: "",
     city: "",
     address: "",
+    paypal: "", // لإضافة بيانات PayPal
   })
 
   const [payment, setPayment] = useState<"paypal" | "shamcash">("paypal")
@@ -50,7 +51,11 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
     cartState.items.length > 0 ? (cartState.items[0] as any).category : ""
 
   const handleSend = async () => {
-    // ✅ تحقق من رفع صورة إذا كان الدفع ShamCash
+    // ✅ تحقق من إدخال بيانات PayPal أو رفع صورة ShamCash
+    if (payment === "paypal" && !form.paypal) {
+      alert("يجب إدخال بريد PayPal لإتمام الطلب")
+      return
+    }
     if (payment === "shamcash" && !proof) {
       alert("يجب رفع صورة إشعار الدفع لإتمام الطلب")
       return
@@ -72,6 +77,7 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 🏙 City: ${form.city}
 📍 Address: ${form.address}
 💳 Payment: ${payment}
+${payment === "paypal" ? `PayPal Email: ${form.paypal}` : ""}
 
 📦 Products:
 ${productsText}
@@ -101,7 +107,7 @@ ${productsText}
 
   const closeAll = () => {
     setStep("info")
-    setForm({ name: "", phone: "", city: "", address: "" })
+    setForm({ name: "", phone: "", city: "", address: "", paypal: "" })
     setProof(null)
     onOpenChange(false)
   }
@@ -214,19 +220,37 @@ ${productsText}
               </div>
             </RadioGroup>
 
-            {payment === "shamcash" && (
-              <label className="flex flex-col gap-2 border p-2 rounded cursor-pointer">
-                <div className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  <span>{proof ? proof.name : "Upload Payment Proof *"}</span>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={e => setProof(e.target.files?.[0] || null)}
+            {/* PayPal بيانات */}
+            {payment === "paypal" && (
+              <div className="flex flex-col gap-2 border p-2 rounded">
+                <Label>PayPal Email *</Label>
+                <Input
+                  placeholder="Enter your PayPal email"
+                  value={form.paypal || ""}
+                  onChange={e => setForm({ ...form, paypal: e.target.value })}
                 />
-              </label>
+              </div>
+            )}
+
+            {/* ShamCash */}
+            {payment === "shamcash" && (
+              <div className="flex flex-col gap-2 border p-2 rounded">
+                <p className="font-semibold text-gray-700 text-center">
+                  محفظة Sham Cash
+                </p>
+                <label className="flex flex-col gap-2 cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <Upload className="h-4 w-4" />
+                    <span>{proof ? proof.name : "Upload Payment Proof *"}</span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => setProof(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
             )}
 
             <div className="flex gap-2">
@@ -240,7 +264,7 @@ ${productsText}
 
               <Button
                 onClick={handleSend}
-                disabled={loading}
+                disabled={loading || (payment === "paypal" && !form.paypal) || (payment === "shamcash" && !proof)}
                 className="flex-1"
               >
                 {loading ? "Sending..." : "Confirm Order"}
