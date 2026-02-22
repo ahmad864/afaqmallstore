@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Upload, ShoppingBag } from "lucide-react"
 import { useCart } from "@/lib/cart-store"
-import { supabase } from "@/lib/supabase" // ✅ Supabase
+import { supabase } from "@/lib/supabase"
 
 import ProductRating from "@/components/ProductRating"
 import RecommendedProducts from "@/components/RecommendedProducts"
@@ -82,21 +82,8 @@ ${productsText}
 💰 Total: $${total}
 `
 
-    // ✅ بيانات Supabase
-    const orderData = {
-      name: form.name,
-      phone: form.phone,
-      city: form.city,
-      address: form.address,
-      payment: payment,
-      paypal: form.paypal || null,
-      total: total,
-      items: cartState.items,
-      created_at: new Date().toISOString(),
-    }
-
-    // Telegram مستقل
     try {
+      // إرسال بيانات + صورة إلى Telegram
       const formData = new FormData()
       formData.append("message", message)
       if (proof) formData.append("proof", proof)
@@ -105,23 +92,35 @@ ${productsText}
         method: "POST",
         body: formData,
       })
-    } catch (err) {
-      console.log("Telegram error:", err)
-    }
 
-    // Supabase مستقل
-    try {
-      const { error } = await supabase
+      // ✅ إرسال الطلب إلى Supabase
+      const orderData = {
+        name: form.name,
+        phone: form.phone,
+        city: form.city,
+        address: form.address,
+        payment: payment,
+        paypal: form.paypal || null,
+        total: total,
+        items: cartState.items,
+        receipt_url: null, // ✅ تم إضافة هذا السطر لتجنب خطأ NOT NULL
+        created_at: new Date().toISOString(),
+      }
+
+      const { data, error } = await supabase
         .from("orders")
         .insert([orderData])
 
-      if (error) throw error
+      if (error) console.log("Supabase error:", error)
+      else console.log("Supabase data:", data)
+
+      dispatch({ type: "CLEAR_CART" })
+      setStep("success")
     } catch (err) {
-      console.log("Supabase error:", err)
+      console.log("Error sending order:", err)
+      alert("Failed to send order")
     }
 
-    dispatch({ type: "CLEAR_CART" })
-    setStep("success")
     setLoading(false)
   }
 
