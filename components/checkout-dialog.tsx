@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Upload, ShoppingBag } from "lucide-react"
 import { useCart } from "@/lib/cart-store"
+import { supabase } from "@/lib/supabase" // ✅ Supabase
 
 import ProductRating from "@/components/ProductRating"
 import RecommendedProducts from "@/components/RecommendedProducts"
@@ -31,7 +32,7 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
     phone: "",
     city: "",
     address: "",
-    paypal: "", // لإضافة بيانات PayPal
+    paypal: "",
   })
 
   const [payment, setPayment] = useState<"paypal" | "shamcash">("paypal")
@@ -46,12 +47,10 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 
   const validate = () => form.name && form.phone && form.city && form.address
 
-  // فئة المنتج المشتراة لاستخدامها في المنتجات المقترحة
   const purchasedCategory =
     cartState.items.length > 0 ? (cartState.items[0] as any).category : ""
 
   const handleSend = async () => {
-    // ✅ تحقق من إدخال بيانات PayPal أو رفع صورة ShamCash
     if (payment === "paypal" && !form.paypal) {
       alert("يجب إدخال بريد PayPal لإتمام الطلب")
       return
@@ -63,12 +62,10 @@ export function CheckoutDialog({ open, onOpenChange }: Props) {
 
     setLoading(true)
 
-    // تجميع المنتجات في نص
     const productsText = cartState.items
       .map(i => `• ${i.name} x${i.quantity} = $${i.price * i.quantity}`)
       .join("\n")
 
-    // نص الرسالة الكامل
     const message = `
 🛒 New Order
 
@@ -85,8 +82,21 @@ ${productsText}
 💰 Total: $${total}
 `
 
+    // ✅ بيانات Supabase
+    const orderData = {
+      name: form.name,
+      phone: form.phone,
+      city: form.city,
+      address: form.address,
+      payment: payment,
+      paypal: form.paypal || null,
+      total: total,
+      items: cartState.items,
+      created_at: new Date().toISOString(),
+    }
+
+    // Telegram مستقل
     try {
-      // إرسال بيانات + صورة (إذا موجودة) إلى Telegram
       const formData = new FormData()
       formData.append("message", message)
       if (proof) formData.append("proof", proof)
@@ -95,13 +105,23 @@ ${productsText}
         method: "POST",
         body: formData,
       })
-
-      dispatch({ type: "CLEAR_CART" })
-      setStep("success")
-    } catch {
-      alert("Failed to send order")
+    } catch (err) {
+      console.log("Telegram error:", err)
     }
 
+    // Supabase مستقل
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .insert([orderData])
+
+      if (error) throw error
+    } catch (err) {
+      console.log("Supabase error:", err)
+    }
+
+    dispatch({ type: "CLEAR_CART" })
+    setStep("success")
     setLoading(false)
   }
 
@@ -124,7 +144,6 @@ ${productsText}
           </DialogTitle>
         </DialogHeader>
 
-        {/* SUCCESS */}
         {step === "success" && (
           <div className="space-y-6 py-6">
             <div className="text-center">
@@ -142,7 +161,6 @@ ${productsText}
           </div>
         )}
 
-        {/* STEP 1 */}
         {step === "info" && (
           <div className="space-y-4">
             <Input
@@ -202,7 +220,6 @@ ${productsText}
           </div>
         )}
 
-        {/* STEP 2 */}
         {step === "payment" && (
           <div className="space-y-4">
             <RadioGroup
@@ -220,7 +237,6 @@ ${productsText}
               </div>
             </RadioGroup>
 
-            {/* PayPal بيانات */}
             {payment === "paypal" && (
               <div className="flex flex-col gap-2 border p-2 rounded">
                 <Label>PayPal Email *</Label>
@@ -232,7 +248,6 @@ ${productsText}
               </div>
             )}
 
-            {/* ShamCash */}
             {payment === "shamcash" && (
               <div className="flex flex-col gap-2 border p-3 rounded items-center">
                 <p className="font-bold text-gray-800 text-center text-lg">
