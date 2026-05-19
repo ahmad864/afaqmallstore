@@ -15,10 +15,11 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" })
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
   const { registerUser } = useAuth()
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
@@ -33,7 +34,9 @@ export default function SignUpPage() {
       setError("Password must be at least 6 characters")
       return
     }
-    const success = registerUser(form.name, form.email, form.password)
+    setLoading(true)
+    const success = await registerUser(form.name, form.email, form.password)
+    setLoading(false)
     if (success) {
       router.push("/")
     } else {
@@ -125,8 +128,12 @@ export default function SignUpPage() {
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                Create Account
+              <Button
+                type="submit"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={loading}
+              >
+                {loading ? "Creating account..." : "Create Account"}
               </Button>
             </form>
           </CardContent>
