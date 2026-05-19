@@ -4,14 +4,16 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { ShoppingBag, Menu, User, LayoutDashboard } from "lucide-react"
+import { ShoppingBag, Menu, User, LayoutDashboard, LogOut } from "lucide-react"
 import { useCart } from "@/lib/cart-store"
 import { CATEGORIES } from "@/lib/data"
 import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/lib/auth-store"
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { state, dispatch } = useCart()
+  const { currentUser, logout } = useAuth()
   const totalItems = state.items.reduce((s, i) => s + i.quantity, 0)
 
   return (
@@ -47,12 +49,33 @@ export function Header() {
               </Button>
             </Link>
 
-            <Link href="/login">
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
-                <User className="h-5 w-5" />
-                <span className="sr-only">Login</span>
-              </Button>
-            </Link>
+            {/* User: إذا مسجل يروح لحسابه، إذا لا يروح لتسجيل الدخول */}
+            {currentUser ? (
+              <div className="flex items-center gap-1">
+                <Link href="/account">
+                  <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
+                    <User className="h-5 w-5" />
+                    <span className="sr-only">Account</span>
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-primary-foreground hover:bg-primary-foreground/10"
+                  onClick={() => logout()}
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span className="sr-only">Logout</span>
+                </Button>
+              </div>
+            ) : (
+              <Link href="/login">
+                <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">Login</span>
+                </Button>
+              </Link>
+            )}
 
             <Button
               variant="ghost"
@@ -103,13 +126,31 @@ export function Header() {
                       {cat.name}
                     </Link>
                   ))}
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="px-4 py-3 text-base font-medium rounded-lg hover:bg-muted transition-colors"
-                  >
-                    Login / Sign Up
-                  </Link>
+                  {currentUser ? (
+                    <>
+                      <Link
+                        href="/account"
+                        onClick={() => setMobileOpen(false)}
+                        className="px-4 py-3 text-base font-medium rounded-lg hover:bg-muted transition-colors"
+                      >
+                        My Account ({currentUser.name})
+                      </Link>
+                      <button
+                        onClick={() => { logout(); setMobileOpen(false) }}
+                        className="px-4 py-3 text-base font-medium rounded-lg hover:bg-muted transition-colors text-left text-red-500"
+                      >
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                      className="px-4 py-3 text-base font-medium rounded-lg hover:bg-muted transition-colors"
+                    >
+                      Login / Sign Up
+                    </Link>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>
