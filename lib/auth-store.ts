@@ -2,7 +2,7 @@
 
 import { create } from "zustand"
 import type { CategorySlug } from "@/lib/data"
-import { supabase } from "./supabase"  // إضافة استيراد Supabase
+import { supabase } from "./supabase"
 
 export interface User {
   id: string
@@ -24,37 +24,71 @@ interface AuthState {
   currentAdmin: Admin | null
   users: User[]
   admins: Admin[]
-  loginUser: (email: string, password: string) => boolean
-  registerUser: (name: string, email: string, password: string) => boolean
-  loginAdmin: (email: string, password: string) => Promise<boolean>  // تعديل لتصبح async
-  logout: () => void
+  loginUser: (email: string, password: string) => Promise<boolean>
+  registerUser: (name: string, email: string, password: string) => Promise<boolean>
+  loginAdmin: (email: string, password: string) => Promise<boolean>
+  logout: () => Promise<void>
   logoutAdmin: () => void
+  initUser: () => Promise<void>
 }
 
-export const useAuth = create<AuthState>((set, get) => ({
+export const useAuth = create<AuthState>((set) => ({
   currentUser: null,
   currentAdmin: null,
   users: [],
-  admins: [],  // حذف الـ mock admins
+  admins: [],
 
-  loginUser: (email, password) => {
-    const user = get().users.find((u) => u.email === email && u.password === password)
-    if (user) {
-      set({ currentUser: user })
-      return true
+  // استرجاع الجلسة عند تحميل الصفحة
+  initUser: async () => {
+    const { data } = await supabase.auth.getSession()
+    const session = data.session
+    if (session?.user) {
+      const name = session.user.user_metadata?.name ?? ""
+      set({
+        currentUser: {
+          id: session.user.id,
+          name,
+          email: session.user.email ?? "",
+          password: "",
+        },
+      })
     }
-    return false
   },
 
-  registerUser: (name, email, password) => {
-    const exists = get().users.find((u) => u.email === email)
-    if (exists) return false
-    const newUser: User = { id: Date.now().toString(), name, email, password }
-    set((state) => ({ users: [...state.users, newUser], currentUser: newUser }))
+  registerUser: async (name, email, password) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    })
+    if (error || !data.user) return false
+    set({
+      currentUser: {
+        id: data.user.id,
+        name,
+        email,
+        password: "",
+      },
+    })
     return true
   },
 
-  loginAdmin: async (email, password) => {  // تعديل loginAdmin للعمل مع Supabase
+  loginUser: async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error || !data.user) return false
+    const name = data.user.user_metadata?.name ?? ""
+    set({
+      currentUser: {
+        id: data.user.id,
+        name,
+        email,
+        password: "",
+      },
+    })
+    return true
+  },
+
+  loginAdmin: async (email, password) => {
     const { data, error } = await supabase
       .from("admins")
       .select("*")
@@ -66,10 +100,13 @@ export const useAuth = create<AuthState>((set, get) => ({
       set({ currentAdmin: data })
       return true
     }
-
     return false
   },
 
-  logout: () => set({ currentUser: null }),
+  logout: async () => {
+    await supabase.auth.signOut()
+    set({ currentUser: null })
+  },
+
   logoutAdmin: () => set({ currentAdmin: null }),
 }))
