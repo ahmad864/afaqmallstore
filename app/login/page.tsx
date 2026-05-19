@@ -15,13 +15,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({ email: "", password: "" })
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
   const { loginUser } = useAuth()
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    const success = loginUser(form.email, form.password)
+    setLoading(true)
+    const success = await loginUser(form.email, form.password)
+    setLoading(false)
     if (success) {
       router.push("/")
     } else {
@@ -84,8 +87,12 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                Login
+              <Button
+                type="submit"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={loading}
+              >
+                {loading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </CardContent>
