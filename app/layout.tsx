@@ -5,6 +5,7 @@ import { CartProvider } from "@/lib/cart-store"
 import { ProductsProvider } from "@/lib/products-store"
 import { ThemeProvider } from "next-themes"
 import { Suspense } from "react"
+import { AuthProvider } from "@/components/auth-provider"
 import "./globals.css"
 
 const tajawal = Tajawal({
@@ -44,7 +45,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <ProductsProvider>
             <CartProvider>
-              <Suspense fallback={null}>{children}</Suspense>
+              <AuthProvider>
+                <Suspense fallback={null}>{children}</Suspense>
+              </AuthProvider>
             </CartProvider>
           </ProductsProvider>
         </ThemeProvider>
